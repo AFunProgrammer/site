@@ -1,0 +1,94 @@
+<template id="inputRowTemplate">
+  <div id="" class="container-sm justify-content-center align-content-center mt-4 border-bottom border-danger border-5 p-3">
+    <div class="row justify-content-center">
+      <span id="GroupName" class="text-center fw-bold fs-3 text-danger">Group</span>
+    </div>
+    <div class="row justify-content-center">
+      <div id="keywords" class="row justify-content-center mt-1">
+        <span class="text-md-start fw-bold">
+          Comma Seperated List of Acceptable Answers:
+        </span>
+        <div class="row justify-content-center mt-1">
+          <input id="" type="text" class="form-control border border-black"
+            placeholder="Answer keywords e.g. fun,sil,hap (funny,silly,happy)" />
+        </div>
+      </div>
+      <div id="solution" class="row justify-content-center">
+        <span class="text-md-start fw-bold"> Group Solution: </span>
+        <div class="row justify-content-center mt-1">
+          <textarea id="" class="form-control border border-black" placeholder="Group Solution" rows="2"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="row justify-content-center mt-2">
+      <div class="row justify-content-center">
+        <span class="text-md-start fw-bold">Items:</span>
+      </div>
+      <div id="items" class="row justify-content-center"></div>
+    </div>
+  </div>
+</template>
+
+<template id="inputItemTemplate">
+  <div class="col-sm h-auto" id="itemContainer">
+    <textarea class="form-control imginput border border-black bg-dark text-white fw-bold fs-4" ondblclick="openFileDialog()" id=""
+      maxlength="80" wrap="hard" style="height: auto; resize: none;"></textarea>
+  </div>
+</template>
+
+<template id="addDelItemTemplate">
+  <div class="col-sm justify-content-center align-content-center" id="addDelItem" style="max-width: 15%;">
+    <div class="row d-flex justify-content-center align-content-center">
+      <button type="button" id="addItem" class="btn btn-primary border border-secondary"
+        onclick="addInputItemByButton()" width="100%">
+        Add New Item
+      </button>
+    </div>
+    <div class="row d-flex justify-content-center align-content-center">
+      <button type="button" id="delItem" class="btn btn-secondary border border-primary"
+        onclick="delInputItemByButton()" width="100%">
+        Remove Item
+      </button>
+    </div>
+  </div>
+</template>
+
+<template id="addDelRowTemplate">
+  <div class="container-sm justify-content-center align-content-center p-4" id="addDelRow">
+    <div class="row d-flex justify-content-center align-content-center">
+      <div class="col-md d-flex justify-content-center align-content-center">
+        <button type="button" id="addRow" class="btn btn-primary border border-secondary flex-fill"
+          onclick="addRowByButton()" width="100%">
+          Add New Row
+        </button>
+      </div>
+      <div class="col-md d-flex justify-content-center align-content-center">
+        <button type="button" id="delRow" class="btn btn-secondary border border-primary flex-fill"
+          onclick="delRowByButton()" width="100%">
+          Remove Row
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="imageLoaderTemplate">
+  <div class="container-fluid justify-content-center align-content-center" id="imgloader" style="position: absolute; background-color: rgba(0, 0, 0, 0.5); top: 0; left: 0; height: 100vh;">
+    <div class="row d-flex justify-content-center align-content-center" id="imgokaycancel">
+      <div class="col-sm-6 d-flex w-25 justify-content-center align-content-center" id="imgokay">
+        <button type="button" class="w-25 btn btn-primary flex-grow-1" onclick="hideImageLoader()" width="100%" style="z-index: 1002;">Okay</button>
+      </div>
+      <div class="col-sm-6 d-flex w-25 justify-content-center align-content-center" id="imgcancel">
+        <button type="button" class="w-25 btn btn-secondary flex-grow-1" onclick="hideImageLoader()" width="100%" style="z-index: 1001;">Cancel</button>
+      </div>
+    </div>
+    <div class="row d-flex h-100 justify-content-center align-content-center" style="background-color: rgba(0, 0, 0, 0.5);">
+      <div class="row d-flex h-100 justify-content-center align-content-center" style="position: relative; max-width: 100%; max-height: 100%;">
+        <div class="selection-square d-flex justify-content-center align-content-center" id="imgselection">
+          <span class="fw-bold" style="pointer-events: none;" id="imgselectiontext">This is the area for selection</span>
+        </div>
+        <img class="d-flex flex-shrink-1" id="imgdisplay" draggable="false" onmousedown="imageMouseDownEventHandler()" onmouseup="imageMouseUpEventHandler()"/>
+      </div>
+    </div>
+  </div>
+</template>

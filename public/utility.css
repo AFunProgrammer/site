@@ -1,0 +1,81 @@
+/* Text Shadows for Main Colors */
+.text-shadow-black { text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); }      /* Black */
+.text-shadow-white { text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.5); }/* White */
+.text-shadow-red { text-shadow: 2px 2px 4px rgba(255, 0, 0, 0.5); }      /* Red */
+.text-shadow-orange { text-shadow: 2px 2px 4px rgba(255, 165, 0, 0.5); } /* Orange */
+.text-shadow-dkorange { text-shadow: 2px 2px 4px rgba(179, 128, 35, 0.5); } /* Orange */
+.text-shadow-yellow { text-shadow: 2px 2px 4px rgba(255, 255, 0, 0.5); } /* Yellow */
+.text-shadow-green { text-shadow: 2px 2px 4px rgba(0, 128, 0, 0.5); }    /* Green */
+.text-shadow-blue { text-shadow: 2px 2px 4px rgba(0, 0, 255, 0.5); }     /* Blue */
+.text-shadow-purple { text-shadow: 2px 2px 4px rgba(75, 0, 130, 0.5); }  /* purple */
+.text-shadow-pink { text-shadow: 2px 2px 4px rgba(238, 130, 238, 0.5); } /* pink */
+
+/* Text Shadows for In-Between Colors */
+.text-shadow-red-orange { text-shadow: 2px 2px 4px rgba(255, 69, 0, 0.5); }    /* Red-Orange */
+.text-shadow-orange-yellow { text-shadow: 2px 2px 4px rgba(255, 174, 66, 0.5); } /* Orange-Yellow */
+.text-shadow-yellow-green { text-shadow: 2px 2px 4px rgba(154, 205, 50, 0.5); }  /* Yellow-Green */
+.text-shadow-green-blue { text-shadow: 2px 2px 4px rgba(0, 206, 209, 0.5); }    /* Green-Blue */
+.text-shadow-blue-purple { text-shadow: 2px 2px 4px rgba(63, 0, 255, 0.5); }   /* Blue-purple */
+.text-shadow-purple-pink { text-shadow: 2px 2px 4px rgba(138, 43, 226, 0.5); } /* purple-pink */
+
+/* Main Colors */
+.text-red { color: #ff0000; }       /* Red */
+.text-orange { color: #ffa500; }    /* Orange */
+.text-dkorange { color: #a57110; }    /* Brown */
+.text-brown { color: #6b4600; }    /* Brown */
+.text-yellow { color: #ffff00; }    /* Yellow */
+.text-green { color: #008000; }     /* Green */
+.text-blue { color: #0000ff; }      /* Blue */
+.text-purple { color: #4b0082; }    /* purple */
+.text-pink { color: #ee82ee; }    /* pink */
+.text-gray { color: #cacaca; }    /* gray */
+.text-midgray { color: #7e7e7e; }    /* dkgray */
+.text-dkgray { color: #3f3f3f; }    /* dkgray */
+.text-white { color: #ffffff; }    /* white */
+
+.text-light-red { color: #ff6666; }       /* Light Red */
+.text-light-orange { color: #ffd580; }    /* Light Orange */
+.text-light-brown { color: #b8860b; }     /* Light Brown */
+.text-light-yellow { color: #ffff99; }    /* Light Yellow */
+.text-light-green { color: #66ff66; }     /* Light Green */
+.text-light-blue { color: #6e94fd; }      /* Light Blue */
+.text-light-purple { color: #9370db; }    /* Light Purple */
+.text-light-pink { color: #ffb6c1; }      /* Light Pink */
+
+/* In-Between Colors */
+.text-red-orange { color: #ff4500; }    /* Red-Orange */
+.text-orange-yellow { color: #ffae42; } /* Orange-Yellow */
+.text-yellow-green { color: #9acd32; }  /* Yellow-Green */
+.text-green-blue { color: #00ced1; }    /* Green-Blue */
+.text-blue-purple { color: #3f00ff; }   /* Blue-purple */
+.text-purple-pink { color: #8a2be2; } /* purple-pink */
+
+/* Background Colors */
+.bg-red { background-color: #ff0000; }
+.bg-orange { background-color: #ffa500; }
+.bg-yellow { background-color: #ffff00; }
+.bg-green { background-color: #008000; }
+.bg-blue { background-color: #0000ff; }
+.bg-purple { background-color: #4b0082; }
+.bg-pink { background-color: #ee82ee; }
+.bg-gray { background-color: #dadada; }
+.bg-dkgray { background-color: #777777; }
+
+.bg-red-orange { background-color: #ff4500; }
+.bg-orange-yellow { background-color: #ffae42; }
+.bg-yellow-green { background-color: #9acd32; }
+.bg-green-blue { background-color: #00ced1; }
+.bg-blue-purple { background-color: #3f00ff; }
+.bg-purple-pink { background-color: #8a2be2; }
+
+
+.tab-space { display: inline-block; width: 1em; /* Adjust the width as needed */ }
+.no-underline { text-decoration: none; }
+.no-href-decoration { text-decoration: none; color: inherit; }
+
+.bg-white-transparent-25 { background-color: rgba(255,255,255,0.25);}
+.bg-white-transparent-50 { background-color: rgba(255,255,255,0.5);}
+.bg-white-transparent-75 { background-color: rgba(255,255,255,0.75);}
+
+.bg-white-transparent-to-opaque {background-color: rgba(255,255,255,0.5);}
+.bg-white-transparent-50:focus {background-color:rgba(255,255,255,0.5);}

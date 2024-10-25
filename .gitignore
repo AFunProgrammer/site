@@ -1,0 +1,8 @@
+# ignore files
+*.lock
+
+# ignore directories
+node_modules/
+private/
+
+

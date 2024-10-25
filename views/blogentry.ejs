@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include('./partials/head.ejs') %>
+    <%- include('./partials/head-scripts.ejs') %>
+    <!-- Include stylesheet -->
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet" />
+    <style>
+      body{
+        background-color: #f5efe6;
+      }
+      body::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url('/images/blogentry.svg') no-repeat;
+        background-size: cover;
+        background-position: center 33%;
+        opacity: 0.20; /* Adjust the value as needed */
+        z-index: -1; /* Ensure it stays behind other content */
+      }
+    </style>     
+  </head>
+
+  <body>
+    <%- include('./partials/nav.ejs') %>
+    <div class="container align-content-center justify-content-center mt-5" style="max-width: 1000px;">
+      <div class="fs-2 fw-bold text-center text-black text-shadow-black">Creating A New Blog Entry: <%=blogUser%></div>
+      <form id="blogForm">
+        <div class="form-group pb-3">
+          <label for="title" class="fs-5 fw-bold text-dkgray text-shadow-black">Blog Title</label>
+          <input type="text" class="form-control border border-2 border-primary bg-white-transparent-50" id="title" placeholder="Enter title">
+        </div>
+        <div class="form-group pb-3">
+          <label for="content" class="fs-5 fw-bold text-dkgray text-shadow-black">Blog Entry</label>
+          <div id="editor" class="border border-2 border-primary bg-white-transparent-50" style="height: 300px;"></div>
+        </div>
+        <div class="form-group">
+          <label for="fileUpload">Upload Files</label>
+          <input type="file" class="form-control-file" id="fileUpload" multiple>
+        </div>
+        <div class="form-group">
+          <label for="attachments">Attachments</label>
+          <ul id="attachments" class="list-group"></ul>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </form>
+    </div>
+
+    <%- include('./partials/body-script.ejs') %>
+    <!-- Include the Quill library -->
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+    <script>
+      // Initialize Quill editor
+      var quill = new Quill('#editor', {placeholder: 'Blog Entry', theme: 'snow'});
+
+      // Handle file uploads
+      document.getElementById('fileUpload').addEventListener('change', function(event) {
+        var files = event.target.files;
+        var attachmentsList = document.getElementById('attachments');
+        attachmentsList.innerHTML = '';
+        for (var i = 0; i < files.length; i++) {
+          var listItem = document.createElement('li');
+          listItem.className = 'list-group-item';
+          listItem.textContent = files[i].name;
+          attachmentsList.appendChild(listItem);
+        }
+      });
+
+      // Handle form submission
+      document.getElementById('blogForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        var title = document.getElementById('title').value;
+        var content = quill.root.innerHTML;
+        var attachments = [];
+        var files = document.getElementById('fileUpload').files;
+        for (var i = 0; i < files.length; i++) {
+          attachments.push(files[i].name);
+        }
+        console.log('Title:', title);
+        console.log('Content:', content);
+        console.log('Attachments:', attachments);
+        // Add your form submission logic here
+      });
+    </script>
+    <%- include('./partials/footer.ejs') %>
+  </body>
+</html>

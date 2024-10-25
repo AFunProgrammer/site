@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include('./partials/head.ejs') %> <%-
+    include('./partials/head-scripts.ejs') %>
+
+    <link href="/cropper/cropper.css" rel="stylesheet" />
+
+    <style>
+      .float-button-image{
+        aspect-ratio: 1/1!important;
+        flex: 1 1 30px!important;
+        min-width: 30px!important;
+        min-height: 30px!important;
+        max-width: 50px!important;
+        z-index: 10001;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;       
+      }
+
+      .float-button-image:hover,.float-button-image:active{
+        opacity: 1;
+      }
+
+      .float-button{
+        right: 0%;
+        top: 1%;
+        opacity: 0.5;
+        z-index: 10001;
+      }
+      
+      .float-button:hover{
+        opacity: 1;
+      }
+
+      @media screen {
+        .float-button{
+          right: 0%;
+          top: 1%;
+          opacity: 0.66;
+          z-index: 10001;
+        }
+      }
+
+      .imginput {
+        aspect-ratio: 1/1!important;
+        flex: 1 1 10vw;
+        min-width: 10px;
+        max-width: 190px;
+        -webkit-text-stroke: 1px black;
+        white-space: pre-wrap;
+      }
+      
+      .imginputparent {
+        aspect-ratio: 1/1!important;
+        flex: 1 1 10vw;
+        min-width: 10px;
+        max-width: 190px;
+        -webkit-text-stroke: 1px black;
+      }         
+    </style>
+
+    <!-- templates for each input row -->
+    <template id="inputRowTemplate">
+      <div id="" class="container-sm justify-content-center align-content-center border border-3 border-secondary rounded p-2 m-0">
+        <div class="row justify-content-center">
+          <span id="GroupName" class="text-center fw-bold fs-3 text-primary" style="text-shadow: #07F 1px 0 10px;">
+            Group
+          </span>
+        </div>
+        <div class="row justify-content-center">
+          <div id="solution" class="row justify-content-center">
+            <span class="text-md-start fw-bold" style="text-shadow: #F30 1px 0 10px;">
+              Group Solution: 
+            </span>
+            <div class="row justify-content-center pt-1">
+              <textarea id="" class="form-control border border-2" style="border-color:#F30!important;" placeholder="What is the connecting idea?" rows="1"></textarea>
+            </div>
+          </div>
+          <div id="keywords" class="row justify-content-center pt-1">
+            <span class="text-md-start fw-bold" style="text-shadow: #0F3 1px 0 10px;">
+              Keyword Answers: 
+            </span>
+            <div class="row justify-content-center pt-1">
+              <input id="" type="text" class="form-control border border-2" style="border-color:#0F3!important;" placeholder="All connecting ideas(e.g.): 'fun,sil,hap' (for funny, silly, happy)"/>
+            </div>
+          </div>
+        </div>
+        <div class="row justify-content-center pt-1 pb-3">
+          <div class="row justify-content-center">
+            <span class="text-md-start fw-bold" style="text-shadow: #70F 1px 0 10px;">
+              Items:
+            </span>
+          </div>
+          <div id="items" class="row justify-content-evenly align-content-center flex-nowrap"></div>
+        </div>
+      </div>
+    </template>
+
+    <template id="inputItemTemplate">
+      <div class="col imginputparent d-flex justify-content-center align-items-center position-relative p-0 m-0">
+        <div
+          class="imginput form-control position-absolute border border-2 text-truncate fs-4 px-1 mx-1"
+          onmouseover="addSelectImageOrText(this)"
+          onclick="addSelectImageOrText(this)"
+          id=""
+          style="border-color:#70F!important;" 
+          contenteditable
+        ></div>
+      </div>
+    </template>
+
+    <!-- templates for floating tool selection -->
+    <template id="templateSelectImageOrText">
+      <div class="float-button buttongroup d-flex flex-column position-absolute mx-0 p-0" id="grpSelectZZ" role="group" aria-label="Input Selection" style="background-color: rgba(0,0,0,0);">
+        <input type="radio" class="btn-check" name="btnRadioZZ" id="btnTextZZ" onclick="inputChangeToText('inputZ')" autocomplete="off" checked>
+        <label class="float-button-image btn btn-outline-primary" for="btnTextZZ" style="background-image:url('/images/writing.png');"></label>
+        <input type="radio" class="btn-check" name="btnRadioZZ" id="btnImageZZ" onclick="inputChangeToImage('inputZ')" autocomplete="off">
+        <label class="float-button-image btn btn-outline-primary" for="btnImageZZ" style="background-image:url('/images/picture.png');"></label>
+      </div>
+    </template>
+
+  </head>
+
+  <body class="mb-3">
+    <%- include('./partials/nav.ejs') %>
+    <dialog id="dlgEditImage">
+      <div id="mask-overlay" class="overlay-mask mask container align-content-center justify-content-center">
+        <img id="mask-image" src="/images/loading075.gif" style="opacity: 1;position: relative;top: 50%;left: 50%;transform: translate(-50%, -50%);"/>
+      </div>
+      <div class="container align-content-center justify-content-center">
+        <div class="row">
+          <div class="col-sm">
+            <div class="btn-group" role="group" aria-label="Image Selection">
+              <button type="button" id="btnReset" class="btn btn-secondary">
+                Reset
+              </button>
+            </div>
+          </div>
+          <div class="col-sm">
+            <form id="frmInput" method="dialog">
+              <div class="btn-group" role="group" aria-label="Input Selection">
+                <button type="button" id="btnCancel" class="btn btn-secondary">
+                  Cancel
+                </button>
+                <button type="button" id="btnSubmit" class="btn btn-secondary">
+                  Submit
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <img id="imgCrop" src="/images/placeholder.png" style="display:block;max-width:100%;">
+      </div>
+    </dialog>
+
+    <div class="container-fluid" id="puzzle" style="max-width: 1000px;">
+      <div class="d-flex flex-col border border-dark rounded-pill bg-dark justify-content-center mx-auto" id="tlbFloat" style="max-width: 300px;">
+        <div class="col-auto d-flex flex-row flex-shrink-1 mx-auto justify-content-center ">
+          <div class="btn-group col d-flex flex-fill justify-content-evenly me-2 ps-2" role="group" aria-label="Items">
+            <button type="button" id="btnAddItem" class="btn btn-secondary" onclick="addInputItemByButton()" data-bs-toggle="tooltip" title="Add A New Item Spot">
+              ➕
+            </button>
+            <button type="button" id="btnRemoveItem" class="btn btn-secondary" onclick="delInputItemByButton()" data-bs-toggle="tooltip" title="Remove Last Item Spot">
+              ➖
+            </button>
+          </div>
+          <div class="btn-group col d-flex flex-fill justify-content-evenly me-2" role="group" aria-label="Items">
+            <button type="button" id="btnRemoveRow" class="btn btn-secondary" onclick="addRowByButton()" data-bs-toggle="tooltip" title="Add A New Row of Items">
+              ⬇️
+            </button>
+            <button type="button" id="btnAddRow" class="btn btn-secondary" onclick="delRowByButton()" data-bs-toggle="tooltip" title="Remove Last Row of Items">
+              ⬆️
+            </button>
+          </div>
+          <div class="btn-group col d-flex flex-fill justify-content-evenly me-2">
+            <button type="button" id="btnPuzzleSubmit" class="btn btn-secondary" onclick="submitFormData()" data-bs-toggle="tooltip" title="Submit Puzzle">
+              ✅
+            </button>                                        
+          </div>
+        </div>
+      </div>
+      <div id="categories" class="row justify-content-center">
+        <div class="row justify-content-center">
+          <span class="text-center fw-bold fs-1">
+            <span>Please Input Connecting Elements For Each Group</span>
+          </span>
+        </div>
+      </div>
+      <div class="row m-2 p-2"></div>
+    </div>
+
+    <%- include('./partials/body-script.ejs') %>
+   
+    <script src="/cropper/cropper.js"></script>
+    <script>
+      //BUG - BUG on iOS memory crash if image too large
+      //      need to resize to max 1024x1024 first
+      //      before editing...
+      let cropper;
+
+      const dialog = document.getElementById("dlgEditImage");
+      const overlay = document.getElementById("mask-overlay");
+      const imgCrop = document.getElementById("imgCrop");
+      const btnCancel = document.getElementById("btnCancel");
+      const btnSubmit = document.getElementById("btnSubmit");
+      const btnReset = document.getElementById("btnReset");
+
+      function resizeImage(image, width, height, destElement) {
+        var canvas = document.createElement("canvas");
+        var imaxWidth = width; // Define the maximum width of the image
+        var imaxHeight = height; // Define the maximum height of the image
+        var iwidth = image.width;
+        var iheight = image.height;
+
+        // Calculate the new dimensions, maintaining the aspect ratio
+        if (iwidth > iheight) {
+          if (iwidth > imaxWidth) {
+            iheight *= imaxWidth / iwidth;
+            iwidth = imaxWidth;
+          }
+        } else {
+          if (iheight > imaxHeight) {
+            iwidth *= imaxHeight / iheight;
+            iheight = imaxHeight;
+          }
+        }
+
+        // Set the canvas dimensions to the new dimensions
+        canvas.width = iwidth;
+        canvas.height = iheight;
+
+        // Draw the resized image on the canvas
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(image, 0, 0, iwidth, iheight);
+
+        // get the image blob and set it
+        canvas.toBlob((blob))
+        
+        ctx = null;
+        canvas = null;
+      }
+
+      function CropperSetup(imgElement) {
+        cropper = new Cropper(imgElement, {
+          viewMode: 1,
+          aspectRatio: 1,
+          crop(event) {
+            //console.log(event.detail.x);
+            //console.log(event.detail.y);
+            //console.log(event.detail.width);
+            //console.log(event.detail.height);
+            //console.log(event.detail.rotate);
+            //console.log(event.detail.scaleX);
+            //console.log(event.detail.scaleY);
+          },
+          ready() {
+            overlay.style.display = "none";
+          },
+        });
+      }
+
+      dialog.addEventListener("close", () => {
+        if (cropper != null) {
+          cropper.destroy();
+          cropper = null;
+        }
+      });
+
+      btnCancel.addEventListener("click", function () {
+        dialog.close();
+      });
+
+      btnSubmit.addEventListener("click", function () {
+        let output = document.getElementById(imgCrop.dataset.sendToElement);
+
+        if (cropper == null || output == null) {
+          dialog.close();
+        }
+
+        cropper.getCroppedCanvas({width:200,height:200}).toBlob((blob) => {
+          console.log("creating object blob url");
+          const url = URL.createObjectURL(blob);
+          output.style.backgroundImage = "url(" + url + ")";
+          dialog.close();
+        });
+      });
+
+      btnReset.addEventListener("click", function () {
+        if (cropper == null) {
+          return;
+        }
+        cropper.reset();
+      });
+
+
+      function addSelectImageOrText(element){
+        const target = element;
+        const grpSelectID = "SelectImageOrText";
+
+        if (target == null){
+          console.log("addSelectImageOrText received a null or blank target");
+          return;
+        }
+
+        // get and verify parent for add cloned template to
+        const parent = target.parentElement;
+
+        if (parent == null){
+          console.log("addSelectImageOrText parent element is null");
+          return;
+        }
+
+        // get the target element to verify it needs a select image or text button
+
+        // check for previous instance (only want 1 to not pollute page with too many elements)
+        //   ... this seems ungraceful but will work for v1.0
+        const prev = document.getElementById(`${grpSelectID}`);
+        if ( prev != null && prev == target.previousElementSibling )
+          return;
+        else if ( prev != null )
+          prev.parentElement.removeChild(prev);
+
+        // extract element ID to add the button to
+        const targetID = target.id;
+        const id = targetID.substring(targetID.length-2,targetID.length);
+
+        // get template
+        const template = document.getElementById("templateSelectImageOrText").cloneNode(true);
+        let templateText = template.innerHTML.toString();
+        
+        //console.log('original template text:\t' + templateText);
+
+        // set templateText variables and IDs
+        templateText = templateText.replaceAll("grpSelectZZ", grpSelectID);
+        templateText = templateText.replaceAll("ZZ", id);
+        templateText = templateText.replaceAll("inputZ", targetID);
+
+        //console.log('changed template text:\t' + templateText);
+
+        template.innerHTML = templateText;
+        const content = template.content;
+
+        // add the new fragment
+        parent.insertBefore(content, target);
+        // get a reference
+        const node = parent.firstElementChild;
+
+        // set the proper check button
+        let btnTextID = "btnText" + id;
+        let btnImageID = "btnImage" + id;
+
+        const btnText = document.getElementById(btnTextID);
+        const btnImage = document.getElementById(btnImageID);
+
+        if ( target.readOnly == true ){
+          btnImage.checked = true;
+        }
+        else {
+          btnText.checked = true;
+        }
+
+      }
+
+      // End of Cropper Section
+
+      function inputChangeToText(target){
+        let inputSpot = document.getElementById(target);
+        inputSpot.style.backgroundImage = "";
+        inputSpot.readOnly = false;
+        inputSpot.focus();
+      }
+
+      function inputChangeToImage(target){
+        let inputSpot = document.getElementById(target);
+        inputSpot.textContent = "";
+        openFileDialog(inputSpot);
+        inputSpot.readOnly = true;
+      }
+
+
+      function addInputItem(Parent) {
+        if (Parent == null) {
+          return;
+        }
+
+        var groupNumber = parseInt(Parent.id.match(/\d/g).join(""));
+        if (groupNumber == undefined) {
+          return;
+        }
+
+        var itemNumber = Parent.children.length;
+
+        const itemTemplate = document
+          .getElementById("inputItemTemplate")
+          .content.cloneNode(true);
+
+        const fragment = document.createDocumentFragment();
+        fragment.appendChild(itemTemplate);
+        fragment.querySelector(
+          ".imginput"
+        ).id = `item${groupNumber}${itemNumber}`;
+        // removing for now because blocks images
+        //fragment.querySelector("textarea").placeholder = `Group: ${groupNumber} Item: ${itemNumber}`;
+
+        // add the new fragment
+        Parent.appendChild(fragment);
+      }
+
+      function delInputItem(Parent) {
+        if (Parent == null) {
+          return;
+        }
+        var groupNumber = parseInt(Parent.id.match(/\d/g).join(""));
+        if (groupNumber == undefined) {
+          return;
+        }
+        var items = Parent.children.length;
+        var item = Parent.querySelector(`#item${groupNumber}${items - 1}`);
+        // need to remove the container for the item as well
+        Parent.removeChild(item.parentNode);
+      }
+
+      function delInputItemByButton() {
+        var group0 = document.getElementById("group-0-items");
+        var itemCount = group0.children.length;
+
+        // 2 items minimum and 1 set of buttons == 3
+        if (itemCount <= 2) return;
+
+        // query for all input rows
+        var inputRows = document.body.querySelectorAll('[id$="-items"]');
+        inputRows.forEach((currentRow) => {
+          delInputItem(currentRow);
+        });
+      }
+
+      function addInputItemByButton() {
+        var group0 = document.getElementById("group-0-items");
+        var itemCount = group0.children.length;
+
+        if (itemCount >= 5) return;
+
+        // query for all input rows
+        var inputRows = document.body.querySelectorAll('[id$="-items"]');
+        inputRows.forEach((currentRow) => {
+          //add new input item
+          addInputItem(currentRow);
+        });
+      }
+
+      function delInputRow(Parent) {
+        if (Parent == null) {
+          console.log("delInputRow: missing parent");
+          return;
+        }
+
+        var rows = Parent.querySelectorAll('[id^="group-"]');
+
+        if (rows == null || rows.length < 3) {
+          return;
+        }
+
+        rows[rows.length - 1].parentNode.removeChild(rows[rows.length - 1]);
+      }
+
+      function addInputRow(Parent) {
+        if (Parent == null) {
+          console.log("addInputRow: missing parent");
+          return;
+        }
+
+        /* find group 1 and match the number of items in the group, if it doesn't exist then default to having 3 items in the group */
+        var allGroups = Parent.querySelectorAll('[id^="group"][id$="parent"]');
+        var initialGroup = allGroups[0];
+        var groupNumber = allGroups.length;
+        var itemCount = 2;
+
+        if (initialGroup) {
+          itemCount = initialGroup.querySelector('[id$="-items"]').children.length;
+        }
+
+        // Get the template element
+        const template = document.getElementById("inputRowTemplate");
+
+        // Create a DocumentFragment to hold the final content
+        const fragment = document.createDocumentFragment();
+        // Clone the content of #inputRowTemplate
+        fragment.appendChild(template.content.cloneNode(true));
+
+        // Define a prefix for generated IDs
+        const idPrefix = "group";
+
+        // Update elements with generated IDs
+        fragment.querySelector(".container-sm").id = `${idPrefix}-${groupNumber}-parent`;
+        fragment.querySelector("#items").id = `${idPrefix}-${groupNumber}-items`;
+        fragment.querySelector("textarea").id = `${idPrefix}-${groupNumber}-solution`;
+        fragment.querySelector("input").id = `${idPrefix}-${groupNumber}-keywords`;
+
+        // Update any group specific display items
+        let groupName = `${idPrefix.slice(0,1).toUpperCase()}${idPrefix.slice(1)} ${groupNumber+1}`
+        fragment.querySelector("#GroupName").textContent = groupName;
+
+        // Get the element where you want to insert #inputItemTemplate content
+        const itemsContainer = fragment.querySelector(`#${idPrefix}-${groupNumber}-items`);
+
+        // Append the #inputItemTemplate content to the #items container within the fragment
+        for (item = 0; item < itemCount; item++) {
+          addInputItem(itemsContainer);
+        }
+
+        // Append the modified fragment to the #categories element
+        Parent.appendChild(fragment);
+      }
+
+      function delRowByButton() {
+        var groups = document
+          .getElementById("categories")
+          .querySelectorAll('[id^="group"][id$="parent"]');
+
+        if (groups == null || groups.length < 3) {
+          return;
+        }
+
+        // nicety to scroll down
+        const newRow = groups[groups.length - 2];
+        newRow.scrollIntoView({ behavior: "smooth", block: "end" });
+
+        groups[groups.length - 1].parentNode.removeChild(
+          groups[groups.length - 1]
+        );
+      }
+
+      function addRowByButton() {
+        var parent = document.getElementById("categories");
+
+        var groups = parent.querySelectorAll('[id^="group-"][id$="parent"]');
+        if (groups != null && groups.length >= 5) {
+          return;
+        }
+
+        addInputRow(parent);
+        // nicety to scroll down
+        //groups = parent.querySelectorAll('[id^="group-"][id$="parent"]');
+        //const newRow = groups[groups.length - 1];
+      }
+
+      function openFileDialog(element) {
+        if ( element == null ){
+          console.log('openFileDialog: target or source element is null');
+          return;
+        }
+        var input = document.createElement("input");
+        input.type = "file";
+        input.onchange = function () {
+          if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (url) {
+              imgCrop.src = url.target.result;
+              imgCrop.dataset.sendToElement = element.id; //track were to send cropped image
+
+              //make sure the style is correct for the element
+              element.style.backgroundRepeat = "no-repeat";
+              element.style.backgroundPosition = "center center";
+              element.style.backgroundSize = "contain";
+
+              iTimeId = setInterval(() => {
+                if (imgCrop.complete == true) {
+                  CropperSetup(imgCrop);
+                  clearInterval(iTimeId);
+                }
+              }, 250);
+
+              dialog.showModal();
+              //showImageLoader(url, element.id);
+            };
+            reader.readAsDataURL(input.files[0]);
+          }
+        };
+        input.click();
+      }
+
+      /////////////////////////////////////////////////////////
+      // Load Data
+      // all functions for gathering loading previously saved
+      // data from the server and processing it for display
+      /////////////////////////////////////////////////////////
+
+      ////////////////////////////////////////////////////////
+      // setupGroupsAndItems - create empty groups and items
+      ////////////////////////////////////////////////////////
+      function setupGroupsAndItems(Groups, Items){
+        // Create Groups and Items
+        for ( i=0;i<=Groups;i++ ){
+          addInputRow(createRoot);
+        }
+
+        // default number of entry items is 2
+        //  iterate from there
+        for ( i=2;i<=Items;i++ ){
+          addInputItemByButton();
+        }
+      }
+
+      //////////////////////////////////////////////////////
+      // setDataInElement - takes the received object data 
+      //                    and loads it up in to element
+      //////////////////////////////////////////////////////
+      async function setDataInElement(Element, Format, Data){
+        try {
+          if ( Format == "text" ){
+            Element.readOnly = false;
+            Element.textContent = Data;
+          } else if ( Format == "image" ){
+            Element.readOnly = true;
+
+            Element.style.backgroundRepeat = "no-repeat";
+            Element.style.backgroundPosition = "center center";
+            Element.style.backgroundSize = "contain";
+
+            const content = atob(Data);
+            const bytenums = new Array(content.length);
+
+            for ( idx=0; idx<content.length; idx++ ){
+              bytenums[idx] = content.charCodeAt(idx);
+            }
+            
+            const bytes = new Uint8Array(bytenums);
+            const image = new Blob([bytes], {type:'image/png'});
+            const objURL = URL.createObjectURL(image);
+
+            Element.style.backgroundImage = `url(${objURL})`;
+          } else {
+            inputChangeToText(Element);
+            
+            Element.textContent = "Unknown Data";
+          }
+        } catch (error) {
+          console.error(`setDataInElement: trying to create image error: `, error);
+        }
+      }
+
+      ////////////////////////////////////////////////////////
+      // getSetupDataFromJSON - get the count
+      ////////////////////////////////////////////////////////
+      function getSetupDataFromJSON(JsonData){
+        let groups = 0;
+        let items = 0;
+        try {
+          JsonData.forEach( (entry) => {
+            // increment row count
+            if ( Number.isInteger(parseInt(entry["group"])) ){
+              groups = Math.max(groups,parseInt(entry["group"]));
+            }
+            // increment item count
+            if ( entry["type"] == "item" ){
+              if ( Number.isInteger(parseInt(entry["item"])) ){
+                items = Math.max(items,parseInt(entry["item"]));
+              }
+            }
+          });
+        } catch ( error ){
+          console.error(`getGroupsAndItemsFromJSONData: error in data when trying to parse`,error);
+        }          
+          
+        return {groups:groups,items:items};
+      }
+
+      /////////////////////////////////////////////////////////////////////
+      // selectElementFromEntry - get the correct element to populate
+      /////////////////////////////////////////////////////////////////////
+      function selectElementFromEntry(Entry){
+        let elementID = "";
+
+        if ( Entry["type"] == "item" ){
+          elementID = `item${Entry["group"]}${Entry["item"]}`;
+        } else if ( Entry["type"] == "answers" ){
+          elementID = `group-${Entry["group"]}-keywords`;
+        } else if ( Entry["type"] == "solution" ){
+          elementID = `group-${Entry["group"]}-solution`;
+        }
+
+        return document.getElementById(elementID);
+      }
+
+      ////////////////////////////////////////////////////////
+      // parseJSONData - parse the data to the right elements
+      ////////////////////////////////////////////////////////
+      function parseJSONData(JsonData){
+        let group = 0;
+        let item = 0;
+
+        JsonData.forEach( (entry) => {
+          populateElement = selectElementFromEntry(entry);
+
+          if ( populateElement == null ){
+            return; // interesting way to force iterate :-)
+          }
+
+          if ( entry["type"] == "item" ){
+            setDataInElement(populateElement, entry["format"], entry["data"]);
+          } else if ( entry["type"] == "answers" ){
+            populateElement.value = entry["data"];
+          } else if ( entry["type"] == "solution" ){
+            populateElement.textContent = entry["data"];
+          }
+        });        
+      }
+
+      ////////////////////////////////////////////////
+      // loadJSONData - takes the received JSON data 
+      //                and loads it up to different spots
+      ////////////////////////////////////////////////
+      function loadJSONData(JsonData){
+        try {
+          const entries = getSetupDataFromJSON(JsonData);
+          setupGroupsAndItems(entries['groups'],entries['items']);
+          parseJSONData(JsonData);
+        } catch ( error ){
+          console.error(`found error in data when trying to parse`,error);
+        }
+      }      
+
+
+      ////////////////////////////////////////////////////
+      // FormData:
+      // all functions for gathering up the form data
+      // and formatting it for submission to the backend
+      // server for processing.
+      ////////////////////////////////////////////////////
+
+      function getNumberOfGroups(){
+        var parent = document.getElementById("categories");
+        var numberOfGroups = parent.querySelectorAll('[id^="group-"][id$="parent"]').length;
+        
+        return numberOfGroups;
+      }
+
+      function getGroupSolution(GroupNumber){
+        let data = null;
+
+        const solution = document.querySelector(`#group-${GroupNumber}-solution`);
+        data = new Blob([solution.value],{type: "text/plain"});
+
+        return {key:`${GroupNumber}-solution`, data:data, meta:`${GroupNumber}Solution.TXT`};
+      }
+
+      function getGroupAnswers(GroupNumber){
+        let data = null;
+
+        const answers = document.querySelector(`#group-${GroupNumber}-keywords`);
+        data = new Blob([answers.value],{type: "text/plain"});
+
+        return {key:`${GroupNumber}-keywords`, data:data, meta:`${GroupNumber}Answers.TXT`};
+      }
+
+      async function getGroupItems(GroupNumber){
+        var parent = document.getElementById("categories");
+        const items = parent.querySelectorAll(`[id^="item${GroupNumber}"]`);
+        let itemList = [];
+        let count = 0;
+
+        for( const item of items){
+          let id = `${GroupNumber}-item-`;
+          let data = null;
+          let meta = null;
+          let text = item.textContent;
+
+          if ( (text == null || text == "") && item.style.backgroundImage != ""){
+            id += "image";
+            meta = `${GroupNumber}${count}item.PNG`;
+            let blobObj = null;
+            let imgURL = item.style.backgroundImage.slice(5,-2);
+            console.log(imgURL);
+            
+            let fData = await fetch(imgURL)
+              .then(response => response.blob())
+              .then(blob => {blobObj = blob;})
+              .catch(e => console.error('Error:', e));
+
+            data = blobObj;
+          }
+          else{
+            id += "text";
+            data = new Blob([text],{type: "text/plain"});
+            meta = `${GroupNumber}${count}item.TXT`;
+          }
+          count += 1;
+          itemList.push({id,data,meta});
+        }
+        return itemList;
+      }
+
+      async function submitFormData(){
+        const formData = new FormData();
+        const numberOfGroups = getNumberOfGroups();
+        let hostData = location.host.toString();
+        hostData = new Blob([hostData],{type: "text/plain"});
+
+        formData.append("host", hostData, "clientinfo.txt");
+        
+        for( group = 0; group < numberOfGroups; group++ ){
+          let definition = getGroupSolution(group);
+          let answers = getGroupAnswers(group);
+          let items = await getGroupItems(group);
+          let iCount = 0;
+
+          // Append the group solution and answers
+          formData.append('solution', definition["data"], definition["meta"]);
+          formData.append('answers', answers["data"], answers["meta"]);
+          // Append the group items
+          for( const item of items){
+            formData.append('item',item["data"],item["meta"]);
+            iCount++;
+          }
+        }
+
+        //console.log('The next few lines are the form data:');
+        //console.log(formData);
+
+        jQuery.ajax({
+          url: `/categories/gamedata/:${vGameID}`,
+          data: formData,
+          cache: false,
+          contentType: false,
+          processData: false,
+          method: 'POST',
+          type: 'POST', // For jQuery < 1.9
+          success: function(response, status, xhr){
+            if (xhr.status === 201) {
+              $('#successModal').modal('show'); // Show the success modal
+            }            
+            if (response.redirectUrl){
+              window.location.href = response.redirectUrl;
+            }
+          },
+          error: function(error) {
+            console.error('Error in submission:', error);
+          }
+        });
+      }
+
+      /****************************************************************
+       ***************** Start Of Running Functions ********************
+       ****************************************************************/
+      // the following line is set by NodeJS when requesting the site
+      var vGameID = "<%=gameID%>"
+      var vDataURL = "<%=dataURL%>";
+      var createRoot = document.getElementById("categories");
+
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+      });
+
+      if ( vGameID == "New" ){
+        addInputRow(createRoot);
+        addInputRow(createRoot);
+      } else {
+        document.addEventListener('DOMContentLoaded', function() {
+          // get the game data for this specific game
+          fetch(vDataURL)
+            .then(resp => resp.json())
+            .then(json => {loadJSONData(json);})
+            .catch(err => console.log(err));
+        }, false);        
+      }
+      
+    </script>
+
+    <%- include('./partials/footer.ejs') %>
+  </body>
+</html>

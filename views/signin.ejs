@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include('./partials/head.ejs') %>
+    <%- include('./partials/head-scripts.ejs') %>
+    <style>
+      body{
+        background-color: #81b4a5;
+      }
+      body::before {
+        content: "";
+        position: absolute;
+        top: 0%;
+        left: 0%;
+        width: 100%;
+        height: 100%;
+        background: url('/images/sign-in/signinbackdrop.svg') no-repeat;
+        background-size: cover;
+        background-position: center 10%;
+        opacity: 0.66; /* Adjust the value as needed */
+        z-index: -1; /* Ensure it stays behind other content */
+      }
+    </style> 
+  </head>
+
+  <body>
+    <%- include('./partials/nav.ejs') %>
+    <div class="container d-flex w-100 align-items-center justify-content-center" style="height:80vh;">
+      <div class="container border border-black align-items-center justify-content-center" style="background-color: rgba(255,255,255,0.75);max-width:400px">
+        <div class="col">
+          <div class="row">
+            <div class="h1 fw-bold text-left">
+              Sign In:
+            </div>
+          </div>
+          <div class="row p-2 text-center align-items-center justify-content-center">
+            <button type="button" class="btn btn-secondary w-100 d-flex justify-content-between align-items-center">
+              <a class="nav-link w-100 d-flex align-items-center" href="/login/yahoo">
+                <img src="/images/sign-in/yahoo/lig-sqr-icon.svg" alt="Continue with Yahoo!">
+                <span class="fs-5 fw-bold flex-grow-1 text-center text-shadow-black">Continue With Yahoo!</span>
+              </a>
+            </button>
+          </div>          
+          <div class="row p-2 text-center align-items-center justify-content-center">
+            <button type="button" class="btn btn-secondary w-100 d-flex justify-content-between align-items-center">
+              <a class="nav-link w-100 d-flex align-items-center" href="/login/google">
+                <img src="/images/sign-in/google/lig-sqr-icon.svg" alt="Continue with Google">
+                <span class="fs-5 fw-bold flex-grow-1 text-center text-shadow-black">Continue With Google</span>
+              </a>
+            </button>
+          </div>
+          <div class="row p-2 text-center align-items-center justify-content-center">
+            <button type="button" class="btn btn-secondary w-100 d-flex justify-content-between align-items-center">
+              <a class="nav-link w-100 d-flex align-items-center" href="/login/microsoft">
+                <img src="/images/sign-in/microsoft/lig-sqr-icon.svg" alt="Continue with Microsoft" class="me-2">
+                <span class="fs-5 fw-bold flex-grow-1 text-center text-shadow-black">Continue With Microsoft</span>
+              </a>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%- include('./partials/body-script.ejs') %>
+    <%- include('./partials/footer.ejs') %>
+  </body>
+</html>
