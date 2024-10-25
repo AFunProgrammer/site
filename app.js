@@ -36,7 +36,11 @@ const OCategories = require('./categories.js');
 var lastMulterDirectory = '';
 var setGamePath = "";
 var messages = [];
-const secretsFile = require('./private/keys/secrets.json');
+const secretsFile = require('./private/settings/secrets.json');
+// DEV - LocalHost
+const envFile = require('./private/settings/local.json');
+// PROD - WebSite
+//const envFile = require('./private/settings/website.json');
 
 var sessionOptions = {
   cookie: {
@@ -53,36 +57,21 @@ var sessionOptions = {
 const codeVerifier = uuid.v1() + crypto.randomBytes(32).toString('hex');
 const codeChallenge = crypto.createHash('sha256').update(codeVerifier).digest('hex');
 
-////////////////////////////////////////////////////////////
-// TODO MAKE SURE THESE ARE USED IN DEV ONLY *LocalHost*
-////////////////////////////////////////////////////////////
-var privateKey  = fs.readFileSync('private/ssl/localhost.key', 'utf8');
-var certificate = fs.readFileSync('private/ssl/localhost.crt', 'utf8');
-var redirectServer = "localhost:3443";
-
-////////////////////////////////////////////////////////////
-// TODO MAKE SURE THESE ARE USED IN PROD ONLY *SingleYu.com*
-////////////////////////////////////////////////////////////
-//var privateKey  = fs.readFileSync('private/ssl/private.key', 'utf8');
-//var certificate = fs.readFileSync('private/ssl/certificate.crt', 'utf8');
-//var redirectServer = "www.inspiringfamily.com";
-
+const redirectServer = envFile.useRedirect;
+var privateKey  = fs.readFileSync(envFile.privateKeyFile, 'utf8');
+var certificate = fs.readFileSync(envFile.certificateFile, 'utf8');
 
 ////////////////////////////////////////////////////////////
 // Credentials / OAuth
 ////////////////////////////////////////////////////////////
 var credentials = {key: privateKey, cert: certificate};
 
-
 ////////////////////////////////////////////////////////////
 // OAuth Client Configuration and Objects
 ////////////////////////////////////////////////////////////
-const gglAuthKeys = require('./private/oauth/gglOauthLocalHost.json');
-const msftAuthKeys = require('./private/oauth/msftOauthLocalHost.json');
-const yhooAuthKeys = require('./private/oauth/yhooOauthLocalHost.json')
-//const gglAuthKeys = require('./private/oauth/gglOauthInspiringFamily.json');
-//const msftAuthKeys = require('./private/oauth/msftOauthInspiringFamily.json');
-//const yhooAuthKeys = require('./private/oauth/yhooOauthInspiringFamily.json')
+const gglAuthKeys = require(envFile.gglAuthKeysFile);
+const msftAuthKeys = require(envFile.msftAuthKeysFile);
+const yhooAuthKeys = require(envFile.yhooAuthKeysFile);
 
 
 const gglWebAuth = new OAuth2Client(
@@ -970,7 +959,7 @@ function signedIn(req, UserInfo) {
 // Sign-In Information
 function signedOut(req) {
   console.log(`signedOut: signing out on session ${req.sessionID}`);
-  console.log(`signedOut: signing out user ${Requreqest.session.userId}`);
+  console.log(`signedOut: signing out user ${req.session.userId}`);
 
   //Clear the user information
   req.session.authenticated = false;
