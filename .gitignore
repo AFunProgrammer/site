@@ -1,5 +1,6 @@
 # ignore files
 *.lock
+package-lock.json
 
 # ignore directories
 public/videos/
