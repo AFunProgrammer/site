@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="48"
+   height="48"
+   viewBox="0 0 48 48"
+   version="1.1"
+   id="svg28"
+   sodipodi:docname="lig-sqr-icon.svg"
+   inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <defs
+     id="defs32" />
+  <sodipodi:namedview
+     id="namedview30"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="11.634615"
+     inkscape:cx="49.120663"
+     inkscape:cy="20.456199"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg28" />
+  <title
+     id="title2">MS-SymbolLockup</title>
+  <metadata
+     id="metadata259">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title>MS-SymbolLockup</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <rect
+     width="48"
+     height="48"
+     fill="#ffffff"
+     id="rect4"
+     x="0"
+     y="0"
+     style="display:block;stroke-width:0.735076"
+     inkscape:label="background"
+     ry="5.3033009" />
+  <g
+     id="g265"
+     transform="translate(0.14421511,2.2694216)">
+    <rect
+       x="7.9066114"
+       y="6"
+       width="15"
+       height="15"
+       fill="#f25022"
+       id="rect8"
+       style="stroke-width:1.66666" />
+    <rect
+       x="7.9066114"
+       y="22.461157"
+       width="15"
+       height="15"
+       fill="#00a4ef"
+       id="rect10"
+       style="stroke-width:1.66666" />
+    <rect
+       x="24.804958"
+       y="6"
+       width="15"
+       height="15"
+       fill="#7fba00"
+       id="rect12"
+       style="stroke-width:1.66666" />
+    <rect
+       x="24.804958"
+       y="22.461157"
+       width="15"
+       height="15"
+       fill="#ffb900"
+       id="rect14"
+       style="stroke-width:1.66665" />
+  </g>
+</svg>

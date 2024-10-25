@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include('./partials/head.ejs') %>
+    <%- include('./partials/head-scripts.ejs') %>
+    <style>
+      body{
+        background-color: #000000;
+      }
+      body::before {
+        content: "";
+        position: absolute;
+        top: 0%;
+        left: 0%;
+        width: 100%;
+        height: 100%;
+        background: url('/images/videoplay.svg') no-repeat;
+        background-size: cover;
+        background-position: center -5%;
+        opacity: 0.10; /* Adjust the value as needed */
+        z-index: -1; /* Ensure it stays behind other content */
+      }
+    </style>     
+  </head>
+
+  <body>
+    <%- include('./partials/nav.ejs') %>
+    <div class="container justify-content-center">
+      <div class="display-4 pt-3 pb-3 fw-bold text-center text-primary text-shadow-blue">
+        Watching: <%=videoName%>
+      </div>
+      <div class="row pt-2 justify-content-center align-items-center">
+        <div class="col w-75 justify-content-center align-items-center text-center" style="min-height:144px;max-height:480px;">
+          <video id="videoelem" controls style="width: 100%; height: auto; min-width: 256px; max-width: 720px; max-height: 480px;">
+            <source src="<%=videoPath%>" type="video/mp4">
+          </video>
+        </div>
+      </div>
+    </div>
+
+    <script>
+
+    </script>
+
+    <%- include('./partials/body-script.ejs') %>
+    <%- include('./partials/footer.ejs') %>
+  </body>
+</html>

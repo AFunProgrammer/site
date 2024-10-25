@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <%- include('./partials/head.ejs') %>
+   <%- include('./partials/head-scripts.ejs') %>
+</head>
+<body>
+   <%- include('./partials/nav.ejs') %>
+   <div class="container">
+        <div class="row p-2 d-flex justify-content-center align-content-center">
+            <textarea readonly id="fullChatText" rows="12" style="overflow-y: scroll; resize: none;"><%= previousMessages %></textarea>
+        </div>
+        <form class="form" id="chatForm" action="" autocomplete="off">
+            <div class="row p-3 d-flex justify-content-center align-content-center" id="addChat" style="max-width: 100%;">
+                <div class="col-sm-3 d-flex justify-content-center align-content-center">
+                    <div class="col text-center me-2"><h4>User:</h4></div>
+                    <input id="chatUser" type="text" name="user" class="form-control border border-black flex-grow-1" placeholder="<%= userName %>">
+                </div>                
+                <div class="col-sm-4 d-flex justify-content-center align-content-center">
+                    <input id="chatText" type="text" name="chat" class="form-control border border-black" placeholder="Type Message Here">
+                </div>
+                <div class="col-sm-1 d-flex justify-content-center align-content-center">
+                    <button type="submit" id="chatSubmit" class="btn btn-primary border border-secondary" width="100%">
+                        Submit
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <%- include('./partials/body-script.ejs') %>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        document.getElementById("chatSubmit").onclick = function( event ) {
+            event.preventDefault();
+            let form = $("#chatForm");
+            let url = '/chat/messages';
+            let chat = form.serialize();
+
+            if ( document.getElementById("chatUser").value.trim() == "" ){
+                chat = chat.slice(0,5) + '<%= userName %>' + chat.slice(5);
+            }
+
+            document.getElementById("chatText").value = "";
+            console.log('Posting Message: ' + chat);
+
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: chat,
+                success: function(data) {
+                    console.log("Chat message was sent successfully");
+                },
+                error: function(data) {
+                    console.log("Chat send error");
+                },
+                timeout: 100
+            });
+
+            document.getElementById("chatText").focus();
+        };
+
+
+
+        var socket = io();
+
+        function addMessages(message){
+            var datetime = new Date();
+            var chatMessages = document.getElementById('fullChatText');
+            chatMessages.textContent += message + "\r\n";
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function getMessages(){
+            $.get('http://localhost:3000/chat/messages', (data) => {
+                data.forEach(addMessages);
+            });
+        }
+
+        socket.on('message', addMessages);
+    </script>
+
+    <%- include('./partials/footer.ejs') %>
+</body>
+
+</html>

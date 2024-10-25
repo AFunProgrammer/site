@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include('./partials/head.ejs') %>
+    <%- include('./partials/head-scripts.ejs') %>
+
+    <style>
+      body{
+        background-color: #ac9466;
+      }
+      body::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url('/images/jesus.svg') center/cover no-repeat;
+        opacity: 0.5; /* Adjust the value as needed */
+        z-index: -1; /* Ensure it stays behind other content */
+      }
+    </style>    
+  </head>
+
+  <body>
+    <%- include('./partials/nav.ejs') %>
+    <div class="container justify-content-center">
+      <div class="row pt-3">
+        <div class="col">
+          <div class="fs-5 p-2 fw-bold text-center text-light-red text-shadow-black">
+            "... let your hearts be full, drawn out in prayer unto him continually for your welfare, and also for the welfare of those who are around you."<br> - Alma 34:27
+          </div>
+        </div>
+        <div class="col">
+          <div class="fs-5 p-2 fw-bold text-center text-light-orange text-shadow-black">
+            "For my soul delighteth in the song of the heart; yea, the song of the righteous is a prayer unto me, and it shall be answered with a blessing upon their heads.<br> - D&C 25:12
+          </div>
+        </div>
+        <div class="col">
+          <div class="fs-5 p-2 fw-bold text-center text-light-blue text-shadow-black">
+            "Trust in the Lord with all thine heart; and lean not unto thine own understanding."<br> - Proverbs 3:5
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="fs-3 p-3 text-center text-white text-shadow-black">
+          "Hear, O Israel: The Lord our God is one Lord:<br>
+          And thou shalt love the Lord thy God with all thine heart,<br> and with all thy soul, and with all thy might.<br>
+          And these words, which I command thee this day, shall be in thine heart"<br> - Deuteronomy 6:4-6
+        </div>
+      </div>
+      <div class="row">
+        <div class="fs-3 p-3 text-center text-shadow-black">
+          "Behold, God is my salvation; I will trust, and not be afraid; for the Lord Jehovah is my strength and my song; he also has become my salvation.
+          Therefore, with joy shall ye draw water out of the wells of salvation.
+          And in that day shall ye say: Praise the Lord, call upon his name, declare his doings among the people, make mention that his name is exalted.
+          Sing unto the Lord; for he hath done excellent things; this is known in all the earth.
+          Cry out and shout, thou inhabitant of Zion; for great is the Holy One of Israel in the midst of thee."<br> - 2 Nephi 22:2-6
+        </div>
+      </div>
+      <div class="row">
+        <div class="fs-1 p-4 fw-bold text-center text-purple text-shadow-purple">
+          “What you Love is Where your Heart is” - Dwight Anderson
+        </div>
+      </div>
+    </div>
+
+    <%- include('./partials/body-script.ejs') %>
+    <%- include('./partials/footer.ejs') %>
+  </body>
+</html>
