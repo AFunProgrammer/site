@@ -2,7 +2,9 @@
 *.lock
 
 # ignore directories
+public/videos/
 node_modules/
 private/
+
 
 
