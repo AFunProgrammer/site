@@ -2,9 +2,10 @@
 const fs = require('fs');
 const path = require('path');
 
-var crypto = require('crypto');
-var uuid = require('uuid');
+const crypto = require('crypto');
+const uuid = require('uuid');
 const url = require('url');
+
 //const morgan = require('morgan'); //most common database server postgres or mysql // most people use docker for virtualization
 
 // express
@@ -29,6 +30,8 @@ const axios = require('axios');
 
 // custom JS objects
 const OCategories = require('./categories.js');
+
+const OMediaDownloader = require('./mediadownload.js');
 
 ////////////////////////////////////////////
 // Global Variables:
@@ -738,15 +741,32 @@ app.get('/video/play/:videoID', async (req, res) => {
 
   try {
     if ( fs.existsSync(videoFilePath) ){
-      return res.render('video_play', {...setSignInInfo(req), title: pageTitle, videoName: videoID, videoPath: htmlVideoPath });
+      return res.render('vidplay', {...setSignInInfo(req), title: pageTitle, videoName: videoID, videoPath: htmlVideoPath });
     }
   } catch(error) {
     console.error(error);
   }
 
-  return res.render('video_play', {...setSignInInfo(req), title: `Video ${videoID} Doesn't Exist Watching: default.mp4`, videoName: 'default.mp4', videoPath: '/videos/default.mp4' });
+  return res.render('vidplay', {...setSignInInfo(req), title: `Video ${videoID} Doesn't Exist Watching: default.mp4`, videoName: 'default.mp4', videoPath: '/videos/default.mp4' });
 });
 
+
+// Setup to download an internet video
+app.get('/video/download', async (req, res) => {
+  return res.render('viddownload', {...setSignInInfo(req), title: `Video Download` });
+});
+
+
+// Download an internet video
+app.post('/video/download/request', upload.none(), async (req, res) => {
+  let downloadUrl = (req.body.videoFromUrl ? req.body.videoFromUrl : "");  // get the URL where the video is
+
+  console.log(`app.post: /video/download/:url: received URL: ${downloadUrl}`);
+  OMediaDownloader.getMediaInfo(downloadUrl);
+  OMediaDownloader.getMedia(downloadUrl);
+  
+  res.status(201).json({ downloadUrl })
+});
 
 
 // Retrieve View and Any Stored Messages
