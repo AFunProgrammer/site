@@ -288,9 +288,4 @@ class OCategories{
   }
 };
 
-// have to do an export statement rather than doing an export keyword
-//  this was very confusing and I spent 20-30 minutes trying to solve
-//  this very dumb error for important a class from a file that is
-//  loaded in to NodeJS using require('./categories.js')
-
 module.exports = OCategories;

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include('./partials/head.ejs') %>
+    <%- include('./partials/head-scripts.ejs') %>
+    <style>
+      body{
+        background-color: #bdbab5;
+      }
+      body::before {
+        content: "";
+        position: absolute;
+        top: 0%;
+        left: 0%;
+        width: 100%;
+        height: 100%;
+        background: url('/images/videoplay.svg') no-repeat;
+        background-size: cover;
+        background-position: center center;
+        opacity: 0.33; /* Adjust the value as needed */
+        z-index: -1; /* Ensure it stays behind other content */
+      }
+    </style>     
+  </head>
+
+  <body>
+    <%- include('./partials/nav.ejs') %>
+    <div class="container justify-content-center">
+      <div class="display-1 p-5 fw-bold text-center text-green text-shadow-black">
+        Download Video
+      </div>
+      <div class="row d-flex justify-content-center align-items-center">
+        <div class="col-sm-2">
+          <div class="fs-3 fw-bold text-end text-dkgray text-shadow-black">URL:</div>
+        </div>
+        <div class="col-sm-8">
+          <input type="text" class="form-control border border-2 border-primary bg-white-transparent-50" id="url" placeholder="Enter URL">
+        </div>
+        <div class="col-sm-2">
+          <button type="submit" id="urlSubmit" class="btn btn-primary border border-secondary" onclick="submitVideoUrl()" width="100%">
+            Submit
+          </button>          
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function submitVideoUrl(){
+        const videoUrl = $("#url").val();
+
+        if ( !videoUrl || videoUrl == "" ){
+          console.log(`error: Video URL is blank`);
+          return;
+        }
+
+        try {
+          const formData = new FormData();
+          formData.append("videoFromUrl", videoUrl);
+
+          jQuery.ajax({
+              url: `/video/download/request`,
+              data: formData,
+              cache: false,
+              contentType: false,
+              processData: false,
+              method: 'POST',
+              type: 'POST', // For jQuery < 1.9
+              success: function(response, status, xhr){
+                if (xhr.status === 201) {
+                  console.log(`successfully posted video url: ${videoUrl}`);
+                }            
+                if (response.redirectUrl){
+                  console.log(`received request to redirect to: ${response.redirectUrl}`);
+                }
+              },
+              error: function(error) {
+                console.error(`error when submitting video url: ${videoUrl} in submission:`, error);
+              }
+            });
+          } catch(error) {
+            console.error(error);
+          }
+        }
+    </script>
+    <%- include('./partials/body-script.ejs') %>
+    <%- include('./partials/footer.ejs') %>
+  </body>
+</html>
