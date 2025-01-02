@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include('./partials/head.ejs') %>
+    <%- include('./partials/head-scripts.ejs') %>
+
+    <style>
+      .text-shadow {
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      }
+
+      .select {
+          flex: 1 1 auto;
+          position: absolute;
+          overflow: hidden;
+      }
+
+      .smiley {
+        user-select: none;
+        position: absolute;
+        bottom: -50px; /* Start from above the screen */
+        animation: fall linear infinite;
+      }
+
+      .smiley::selection {
+        background: transparent;
+      }
+
+      @keyframes fall {
+        0% {
+          transform: translateY(-20%);
+        }
+        100% {
+          transform: translateY(100vh); /* Fall to the bottom of the screen */
+        }
+      }
+
+      .move {
+        animation: move 1.5s linear 1;
+      }
+
+      @keyframes move {
+        0% {
+          transform: translateX(0) translateY(0);
+        }
+        100% {
+          transform: translateX(var(--distance-x)) translateY(var(--distance-y));
+        }
+      }
+
+    </style>
+
+    <template id="template-set">
+      <div class="d-flex flex-row flex-nowrap justify-content-center set" style="overflow:hidden;width:auto" data-solved="false" data-set="XX">
+      </div>
+    </template>
+
+    <template id="template-spot">
+      <div class="d-flex flex-column flex-fill align-items-center spot">
+        <div class="square rounded" 
+             onclick="clickSelect()"
+             onmouseover="mouseOverHighlight()"
+             onmouseleave="mouseLeaveUnHighlight()"
+             data-solved="false" 
+             data-selected="false" 
+             data-set="XX">
+        </div>
+      </div>
+    </template>
+
+    <template id="template-select">
+      <div class="select rounded" style="background-color:rgba(200, 200, 0, 0.5);"></div>
+    </template> 
+    
+  </head>
+
+  <body style="background-color: coral;">
+    
+    <%- include('./partials/nav.ejs') %>
+
+    <!---------- Answer Dialog ----------->
+    <div class="modal" data-bs-backdrop="static" tabindex="-1" id="dlgAnswer">
+      <div class="modal-dialog modal-dialog-centered" style="background-color: rgba(0,0,0,0.0);">
+        <div class="modal-content" style="background-color: rgba(0,0,0,0.35);">
+          <div class="modal-body" style="background-color: rgba(0,0,0,0.35);">
+            <div class="row mb-2 justify-content-center">
+              <div class="d-inline px-1" style="font-size:1.5em;color:white;width:fit-content;text-shadow: #FC0 1px 0 10px;">Connecting idea for group:</div>
+              <div id="fldGroup" class="d-inline fw-bolder px-1" style="font-size:1.5em;color: green;width:fit-content;">0</div>
+            </div>
+            <div class="row ms-5 me-5 mb-3 justify-content-center align-content-center">
+              <input type="text" class="form-control flex-grow-1" placeholder="Connecting Idea" id="fldConnection" aria-label="Connecting Idea" autofocus>
+            </div>
+            <div class="row p-3 justify-content-center align-content-center">
+              <button type="button" class="btn btn-primary" id="btnAnswer" style="width:50%;">Answer</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!------- End of Answer Dialog ----------->
+
+    <!---------- You Are [Correct/Wrong] Dialog ----------->
+    <div class="modal" data-bs-backdrop="static" tabindex="-1" id="dlgCorrect">
+      <div class="modal-dialog modal-dialog-centered" style="background-color: rgba(0,0,0,0.0);">
+        <div class="modal-content" style="background-color: rgba(0,0,0,0.35);">
+          <div class="modal-body" style="background-color: rgba(0,0,0,0.35);">
+            <div class="row mt-2 justify-content-center align-content-center text-center">
+              <div id="fldConnectedIdea" class="d-inline px-1" style="font-size:1.5em;color:white;width:fit-content;text-shadow: #FC0 1px 0 10px;">[Connected Idea]</div>
+              <div id="fldGroupColor" class="d-inline fw-bolder px-1" style="font-size:1.5em;width:fit-content;">[Group Color]</div>
+            </div>
+            <div class="row mb-2 justify-content-center align-content-center text-center">
+              <div class="col-auto">
+                <h4 id="fldCorrect" class="fw-bolder" style="color: green;">Correct</h4>
+              </div>              
+            </div>
+            <div class="row mt-2 justify-content-center align-content-center text-center">
+              <h4 id="fldConnectedIdea" style="color:white;text-shadow: #FC0 1px 0 10px;">The description of the Group is:</h4>
+            </div>
+            <div class="row mb-2 justify-content-center align-content-center text-center">
+              <div class="col-auto">
+                <pre id="fldSolution" class="fw-bold" style="font-size: 1.5em; color: rgb(191, 194, 0);">Solution</pre>
+              </div>              
+            </div>
+            <div class="row justify-content-center align-content-center p-3">
+              <button type="button" class="btn btn-primary" id="btnOkay" style="width:50%;">Okay</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!----------- End of You Are [Correct/Wrong] Dialog ------------>    
+
+    <!------- Start of Game Layout ------>
+    <div class="container-fluid align-top justify-content-center" style="min-height:90vh;max-width:1020px;" id="categories">
+      <div class="row justify-content-center" style="width:100%;">
+        <span class="text-shadow" style="font-size:1em;width:auto;">Select 
+          <span id="fldItems" class="text-shadow text-warning" ></span>
+          items that share the same idea to form
+          <span id="fldGroups" class="text-shadow text-warning"></span>
+          different groups of items
+        </span>
+      </div>
+      <div class="row justify-content-center" style="width:100%;">
+        <span class="text-shadow" style="font-size:1.5em;width:auto;">You've earned 
+          <span id="fldEarnedPts" class="text-shadow text-info" ></span>
+          points out of 
+          <span id="fldTotalPts" class="text-shadow text-success"></span>
+          total points
+         </span>
+      </div>
+      <div class="row justify-content-center" style="width:100%;">
+        <span class="text-shadow" style="width:auto;">This puzzle was brought to you by: <%=madeBy%></span>
+      </div>      
+    </div>
+    <!-------- End of Game Layout ------->
+    <%- include('./partials/body-script.ejs') %>
+
+    <script>
+        //Beginning of JavaScript Function Definitions
+        function clearChildren(node) {
+          while (node.firstChild) {
+            node.removeChild(node.firstChild);
+          }
+        }
+
+        function clearSelections(){
+          var elements = document.getElementsByClassName("square");
+          Array.from(elements).forEach(function(element) {
+            if (element.dataset.solved == 'false'){
+              element.style.backgroundColor = "";
+              element.dataset.selected = 'false';
+              removeSelectOverlay(element);             
+            }
+          });          
+        }
+
+        function getSelected(){
+          var elements = document.getElementsByClassName("square");
+          var selections = [];
+          Array.from(elements).forEach(function(element) {
+            if (element.dataset.selected == 'true'){ 
+              selections.push(element);
+            }
+          });
+          return selections;
+        }
+
+        function getSolvedRowCount(){
+          var rows = Array.from(document.getElementsByClassName("set"));
+          var solvedRowCount = 0;
+          rows.forEach(function(row){
+            if (row.getAttribute("data-solved") == 'true'){
+              solvedRowCount += 1;
+            }
+          });
+          return solvedRowCount;
+        }
+
+        function doesSetMatch(){
+          let solved = true;
+          let selections = getSelected();
+
+          if ( selections == null || selections.length == 0 ){
+            return false; //this will probably never be hit, but this is old code so put a check here...TBD
+          }
+
+          let checkSet = selections[0].dataset.set; //check against first found set
+
+          for( const selection of selections ){
+            if ( selection.dataset.set != checkSet ){
+              return false;
+            }
+          }
+
+          return true;
+        }
+
+        function checkForMatch(){
+          let matches = getSelected();
+          return doesSetMatch(matches);
+        }
+
+        function getColorFromGroupColorName(ByColorName){
+          let color = "rgb(251,251,251)"
+
+          if ( ByColorName ){
+            if ( ByColorName == "red" ){
+              color = "rgb(251,0,0)";
+            } else if ( ByColorName == "green" ){
+              color = "rgb(0,251,0)";
+            } else if ( ByColorName == "blue" ){
+              color = "rgb(0,0,251)";
+            } else if ( ByColorName == "purple" ){
+              color = "rgb(251,0,251)";
+            } else if ( ByColorName == "orange" ){
+              color = "rgb(255,165,0)";
+            } else if ( ByColorName == "aquaish" ){
+              color = "rgb(0,187,221)";
+            }
+          }
+          
+          return color;
+        }
+
+        function getColorBasedUponMatches(){
+          let color = "rgba(251,251,251,1.0)"
+          let colorName = "white";
+
+          switch(getSolvedRowCount()){
+            case 0:
+              color = "rgba(251,0,0,0.5)";
+              colorName = "red";
+              break;
+            case 1:
+              color = "rgba(0,251,0,0.5)";
+              colorName = "green";
+              break;
+            case 2:
+              color = "rgba(0,0,251,0.5)";
+              colorName = "blue";
+              break;
+            case 3:
+              color = "rgba(251,0,251,0.5)";
+              colorName = "purple";
+              break;
+            case 4:
+              color = "rgba(255,165,0,0.5)";
+              colorName = "orange";
+              break;
+            default:
+              color = "rgba(0,187,221,0.5)";
+              colorName = "aquaish";
+              break;
+          }
+          
+          return {"color":color,"colorName":colorName};
+        }
+
+        function changeParent(element, srcParent, dstParent) {
+          const elementBounds = element.getBoundingClientRect();
+          const srcBounds = srcParent.getBoundingClientRect();
+          const dstBounds = dstParent.getBoundingClientRect();
+
+          const srcX = srcBounds["left"];
+          const srcY = srcBounds["top"];
+
+          const dstX = dstBounds["left"];
+          const dstY = dstBounds["top"];
+
+          if ( srcX == dstX && srcY == dstY ){
+            return;
+          }
+
+          element.style.setProperty('--distance-x', (dstX - srcX) + 'px');
+          element.style.setProperty('--distance-y', (dstY - srcY) + 'px');
+          element.style.position = "absolute";
+
+          let changeOverlayColor = null;
+          let addOverlay = false;
+
+          if ( element.childElementCount > 0 ){
+            addOverlay = true;
+            removeSelectOverlay(element);
+          }
+
+
+          // create event listener for when animation finishes
+          //  to remove from one parent and place in the other
+          //  while also changing other important properties
+          element.addEventListener('animationend', function() {
+            srcParent.removeChild(this);
+            dstParent.appendChild(this);
+            this.style.position = "";
+            this.style.zIndex = "101";
+
+            // Reapply !important to min-width and min-height
+            //  this appears to be a weird CSS limitation or bug
+            //  that caused an element to switch back to min-#
+            //  and couldn't be overridden with keyframe
+            this.style.setProperty('min-width', '10px', 'important');
+            this.style.setProperty('min-height', '10px', 'important');            
+            this.classList.remove('move');
+            
+            if ( addOverlay ){
+              addSelectOverlay(this);
+            }
+
+          }, {once: true});
+
+          element.style.zIndex = "10001";
+          // Apply a new !important min-width and min-height due
+          //  to sizing suddenly changing without explanation...
+          //  this appears to be a weird CSS limitation or bug
+          //  that caused an element to switch back to min-#
+          //  and couldn't be overridden with keyframe          
+          element.style.setProperty('min-width', elementBounds["width"] + "px", 'important');
+          element.style.setProperty('min-height', elementBounds["height"] + "px", 'important');
+
+          // add animation class
+          element.classList.add('move');
+        }      
+
+        function isInDesiredSet(Spot, Set){
+          // should use a more technical function but this can work I guess
+          if ( Spot.parentElement.parentElement == Set ){
+            return true;
+          }
+
+          return false;
+        }
+
+        function moveSolvedToFirstFree(matches){
+          let rows = Array.from(document.getElementsByClassName("set"));
+          let spots = []; //Array.from(document.getElementsByClassName("spot"));
+          let useRow = null;
+          let useColor = "rgb(251,251,251)"
+          let setName = matches[0].dataset.set;
+
+          useRow = rows[getSolvedRowCount()];
+          spots = Array.from(useRow.children);
+
+          
+          let matchColor = getColorBasedUponMatches();
+          useColor = matchColor["color"];
+          useColorName = matchColor["colorName"];
+
+          // set the row name as the appropriate set name or group id
+          useRow.dataset.solved = 'true';
+          useRow.dataset.set = setName;
+          useRow.dataset.group = useColorName;
+
+          // change their color
+          for ( const match of matches ){
+            match.firstElementChild.style.backgroundColor = useColor;
+            match.dataset.group = useColorName;
+            match.dataset.selected = 'false';
+            match.dataset.solved = 'true';
+          }
+
+          // remove items already in correct spot
+          for ( let indx = (matches.length - 1); indx >= 0; indx-- ){
+            if ( isInDesiredSet(matches[indx], useRow) ){
+              matches.splice(indx,1);
+            }
+          }
+
+          // remove spots that are already correct
+          for ( let indx = (spots.length - 1); indx >= 0; indx-- ){
+            if ( spots[indx].firstElementChild.dataset.solved == "true" ){
+              spots.splice(indx,1);
+            }
+          }
+
+          // move the spots from one container to another
+          let indx = 0;
+          for( let spot of spots ){
+            swapA = spot.firstChild;
+            swapB = matches[indx];
+            oldParent = matches[indx].parentElement;
+
+            changeParent(swapA, spot, oldParent);
+            changeParent(swapB, oldParent, spot);
+            indx += 1;
+          }
+        }
+
+        function noMoreMoves(){
+          let rows = document.getElementsByClassName("set");
+
+          for ( const row of rows ){
+            if (row.dataset.solved == "false" ){
+              return false;
+            }
+          }
+
+          return true;
+        }
+
+        function getSelectedCount(){
+          var count = 0;
+          var elements = document.getElementsByClassName("square");
+
+          Array.from(elements).forEach(function(element) {
+            if (element.dataset.selected == 'true'){ 
+              count += 1;
+            }
+          });
+
+          return count;      
+        }
+
+        function addSelectOverlay(Element){
+          if ( Element.childElementCount > 0 ){
+            return;
+          }
+
+          let template = document.getElementById("template-select").content.cloneNode(true);
+          let selectOverlay = template.querySelector(".select");
+
+          let boundingRect = Element.getBoundingClientRect();
+
+          let padLeft = parseInt($(Element).css("padding-left"));
+          let padRight = parseInt($(Element).css("padding-right"));
+          let padTop = parseInt($(Element).css("padding-top"));;
+          let padBottom = parseInt($(Element).css("padding-bottom"));
+
+          let width = padLeft + padRight + boundingRect["width"];
+          let height = padTop + padBottom + boundingRect["height"];
+          let left = -padLeft;
+          let top = -padTop;
+
+          selectOverlay.style.zIndex = "999";
+          selectOverlay.style.position = "absolute";
+          selectOverlay.style.margin = "0";
+          selectOverlay.style.padding = "0";     
+          selectOverlay.style.width = width + "px";
+          selectOverlay.style.height = height + "px";
+          selectOverlay.style.top = top + "px";
+          selectOverlay.style.left = left + "px";
+          selectOverlay.style.pointerEvents = "none";
+
+          // this function is also used to re-apply overlay
+          //  due to animation changes or size changes
+          //  check to see if a group exists, if so then
+          //  go ahead and use the group [color] for background
+          if ( Element.dataset.group != null ){
+            selectOverlay.style.backgroundColor = getColorFromGroupColorName(Element.dataset.group);
+            selectOverlay.style.opacity = "0.5";
+          }
+
+          Element.appendChild(template);
+        }
+
+        function removeSelectOverlay(Element){
+          if (Element.dataset.selected == "true"){
+            return;
+          }
+
+          while ( Element.firstChild ){
+            Element.removeChild(Element.firstChild);
+          }
+        }
+
+        function mouseOverHighlight(){
+          var source = event.target;
+          var selected = source.getAttribute("data-selected");
+          var solved = source.getAttribute("data-solved");
+
+          if (solved == 'true' || selected == 'true'){
+            return;
+          }
+
+          if (selected == 'false' && getSelectedCount() < vSpots) {
+            addSelectOverlay(source);            
+          }
+        }
+
+        function mouseLeaveUnHighlight(){
+          var source = event.target;
+          var selected = source.getAttribute("data-selected");
+          var solved = source.getAttribute("data-solved");
+
+          if (solved == 'true' || selected == 'true'){
+            return;
+          }
+
+          removeSelectOverlay(source);
+        }
+
+        function clickSelect() {
+          var source = event.target;
+          var selected = source.getAttribute("data-selected");
+          var solved = source.getAttribute("data-solved");
+
+          if (solved == 'true'){
+            return;
+          }
+
+          if (selected == 'false' && getSelectedCount() < vSpots) {
+            source.dataset.selected = 'true';
+            addSelectOverlay(source);            
+          }
+          else {
+            source.dataset.selected = 'false';
+            removeSelectOverlay(source);
+          }
+
+          if ( getSelectedCount() == vSpots ){
+            if ( checkForMatch() ){
+              // move the boxes to the first open set (or row) that isn't solved
+              moveSolvedToFirstFree(getSelected());
+              // add the points to the points total
+              let currentScore = parseInt(document.getElementById("fldEarnedPts").textContent);
+              currentScore += 1;
+              document.getElementById("fldEarnedPts").textContent = `${currentScore}`.padStart(2,'0');
+
+              // check for end of game
+              if ( noMoreMoves() ){
+                setTimeout(endGame, 1000); // 1 second should be good...
+              }
+            }
+            else {
+              clearSelections();
+            }
+          }
+        }
+
+        function resizeSpots(){
+          let rows = Array.from(document.getElementsByClassName("set"));
+          let cols = Array.from(document.getElementsByClassName("spot"));
+          
+          if ( rows.length == 0 || cols.length == 0 ){
+            //console.log(`resizeSpots: no active game, skipping resize`);
+            return;
+          }
+          
+          let baseNode  = document.getElementById('categories');
+          let colWidth = baseNode.offsetWidth / (cols.length / rows.length);
+          let rowHeight = baseNode.offsetHeight /  rows.length;
+          
+          colWidth = Math.min(colWidth, rowHeight);
+          rowHeight = colWidth;
+          for ( const row of rows ){
+            row.style.minHeight = rowHeight + 'px';
+          }
+          
+          //for ( const col of cols ){
+          //  col.style.minWidth = colWidth + 'px';
+          //  col.style.padding = "2px 2px 2px 2px";
+          //}
+        }
+
+        function resizeContent(){
+          rect = calculateSpaceRect(null);
+          max = calculateMaxSpaceFromRect(rect);
+
+          //adjust the container to fit the available space
+          container = document.getElementById('categories');
+          container.style.width = max.width + 'px';
+          container.style.height = max.height + 'px';
+          //console.log('just set: ' + container.id + ' to dimensions: ' + max.width + ', ' + max.height);
+        }
+
+
+        ////////////////////////////////////////////////
+        // doesSetExist - checks to see if a set exists
+        ////////////////////////////////////////////////
+        function doesSetExist(SetName){
+          let set = document.querySelector(`.set[data-set="${SetName}"]`);
+
+          if ( set == null ){
+            return false;
+          }
+          
+          return true;
+        }
+
+        /////////////////////////////////////////////
+        // addNewSet - adds a new set to the
+        //             categories container
+        /////////////////////////////////////////////
+        function addNewSet(SetName){
+          let sets = Array.from(document.getElementsByClassName("set"));
+
+          //check to verify that name doesn't exist already
+          for( const set of sets ){
+            if ( set.dataset.set == SetName ){
+              //console.log(`addNewSet: SetName already exists: ${SetName}`);
+              return false;
+            }
+          }
+          
+          //get container and add set
+          let fragFromTempSet = document.getElementById("template-set").content.cloneNode(true);
+          let set = fragFromTempSet.querySelector(".set");
+
+          set.dataset.set = SetName;
+          set.dataset.solved = "false";
+
+          document.getElementById("categories").appendChild(fragFromTempSet);
+          //console.log(`addNewSet: added new set: ${set.dataset.set}`);
+
+          return true;
+        }
+
+        ////////////////////////////////////////////////
+        // setDataInElement - takes the received object data 
+        //                    and loads it up in to element
+        ////////////////////////////////////////////////
+        async function setDataInElement(Element, Data, DataType){
+          if ( DataType == "text" ){
+            Element.style.backgroundImage = `url(${await convertTextToImageOffscreen(Data, 36, 200, 200)})`;
+            //Element.textContent = Data;
+          } else if ( DataType == "image" ){
+            try {
+              const content = atob(Data);
+              const bytenums = new Array(content.length);
+              for ( idx=0; idx<content.length; idx++ ){
+                bytenums[idx] = content.charCodeAt(idx);
+              }
+              const bytes = new Uint8Array(bytenums);
+              const image = new Blob([bytes], {type:'image/png'});
+              const objURL = URL.createObjectURL(image);
+              
+              Element.style.backgroundImage = `url(${objURL})`;
+            } catch (error) {
+              console.error(`setDataInElement trying to create image error: `,error);
+            }
+          } else {
+            Element.style.backgroundImage = `url(${convertTextToImageOffscreen("Unkown/r/nData", 36, 200, 200)})`;
+          }
+        }
+
+        //////////////////////////////////////////////////
+        // addNewSpotToSet - adds a new Spot to a Set
+        //                   container under categories
+        //////////////////////////////////////////////////
+        function addNewSpotInSet(SetName, Data, DataType){
+          if ( doesSetExist(SetName) == false ){
+            addNewSet(SetName);
+          }
+          let set = document.querySelector(`.set[data-set="${SetName}"]`);
+          
+          let fragFromTempSpot = document.getElementById("template-spot").content.cloneNode(true);
+          let spot = fragFromTempSpot.querySelector(".square");
+          
+          spot.dataset.solved = "false";
+          spot.dataset.selected = "false";
+          spot.dataset.set = SetName;
+
+          // set the data and proper format
+          setDataInElement(spot, Data, DataType);
+
+          set.appendChild(fragFromTempSpot);
+
+          //console.log(`addNewSpotToSet: added new spot to set: ${set.dataset.set}`);
+          return true;
+        }
+
+
+        ////////////////////////////////////////////////
+        // addNewSpot - adds a new Spot to ALL sets
+        //              under the categories container
+        ////////////////////////////////////////////////
+        function addNewSpot(){
+          let sets = Array.from(document.getElementsByClassName("set"));
+
+          for( const set of sets ){
+            let count = 0;
+            if( addNewSpotInSet(set.dataset.set, `${set}${count}`, "text" ) == false ){
+              //console.log(`addNewSpot: could not add spot to SetName: ${set.dataset.set}`);
+              return false;
+            }
+          }
+
+          return true;
+        }
+
+        ////////////////////////////////////////////////
+        // loadJSONData - takes the received JSON data 
+        //                and loads it up to different spots
+        ////////////////////////////////////////////////
+        function loadJSONData(jsonData){
+          vSets = 0;
+          vSpots = 0;
+
+          try {
+            jsonData.forEach( (entry) => {
+              if ( Number.isInteger(parseInt(entry["group"])) ){
+                vSets = Math.max(vSets,parseInt(entry["group"]));
+              }
+
+              // input a new item
+              if ( entry["type"] == "item" ){
+                if ( Number.isInteger(parseInt(entry["item"])) ){
+                  vSpots = Math.max(vSets,parseInt(entry["item"]));
+                }                
+                if ( addNewSpotInSet(entry["group"],entry["data"],entry["format"]) == false ){
+                  //console.log(`failed to insert entry for: ${JSON.stringify(entry)}`);
+                }
+                // log the data out
+                // console.log(`entry in JSON data: ${JSON.stringify(entry)}`);
+              } else if ( entry["type"] == "answers" ){
+                vAnswers[entry["group"]] = entry["data"];
+              } else if ( entry["type"] == "solution" ){
+                vSolutions[entry["group"]] = entry["data"];
+              }
+            });
+          } catch ( error ){
+            console.error(`found error in data when trying to parse`,error);
+          }
+
+          vSets++;
+          vSpots++;
+        }
+
+        ////////////////////////////////////////////////////
+        // startNewGame - clear all the solved game data and
+        //                randomize the spots for each set
+        ////////////////////////////////////////////////////
+        function startNewGame(){
+          let sets = Array.from(document.getElementsByClassName("set"));
+          let containers = Array.from(document.getElementsByClassName("spot"));
+          let elements = Array.from(document.getElementsByClassName("square"));
+
+          for ( let set of sets ){
+            // reset solved variables
+            set.dataset.solved = "false";
+          }
+
+          for( let element of elements ){
+            // reset solved variables
+            element.dataset.solved = "false";
+            element.dataset.selected = "false";
+            //element.style.backgroundColor = "rgb(251,251,251)";
+
+            // Yes to Randomize
+            const index = Math.floor(Math.random() * containers.length);
+            // Clearing out Row (or Set)
+            clearChildren(containers[index]);
+            // Appending new items in Row
+            containers[index].appendChild(element);
+            // What does this do again?
+            containers.splice(index,1);
+          }
+
+          document.getElementById("fldItems").textContent = `${elements.length / sets.length}`
+          document.getElementById("fldGroups").textContent = `${sets.length}`;
+
+          let solutionCount = (Object.keys(vSolutions).length > 0 ? Object.keys(vSolutions).length : 0);
+          let totalPoints = vSets + solutionCount;// + ((vSets*vSpots) % 10 === 0 ? 0 : 10 - (vSets*vSpots));
+          document.getElementById("fldTotalPts").textContent = `${totalPoints}`
+          document.getElementById("fldEarnedPts").textContent = "00";
+        }
+
+        //////////////////////////////////////////
+        // endGame - end the game because there
+        //           are no more moves left to do
+        //////////////////////////////////////////
+        async function endGame(){
+          await getGuesses();
+          //if enough points
+          let currentPoints = parseInt(document.getElementById("fldEarnedPts").textContent);
+          let totalPoints = parseInt(document.getElementById("fldTotalPts").textContent);
+
+          if ( currentPoints >= totalPoints ){
+            youWon();
+          }
+        }
+
+        /////////////////////////////////////////////////////////
+        // isGuessCorrect - compare the text of the guess to the
+        //                  possible connecting ideas for the 
+        //                  specific group
+        /////////////////////////////////////////////////////////
+        function isGuessCorrect(GroupID, Guess){
+          if ( Guess == null || Guess == "" ){
+            return false;
+          }
+
+          let answerList = vAnswers[GroupID];
+          let answers = answerList.replaceAll(' ','').toLowerCase().split(',');
+
+          let guess = Guess.replaceAll(' ','').toLowerCase();
+
+          for ( const answer of answers ) {
+            let len = Math.min(answer.length, guess.length);
+
+            if ( answer.substring(0,len) == guess.substring(0,len) ){
+              return true;
+            }
+          }
+
+          return false;
+        }
+
+        /////////////////////////////////////////////////////////
+        // getGroupGuess - get the user guess for the connecting
+        //                 idea for the given group
+        /////////////////////////////////////////////////////////
+        function getGroupGuess(GroupID, DisplayGroupID) {
+          return new Promise((resolve, reject) => {
+            const dlgElement = document.getElementById("dlgAnswer");
+            const btnAnswer = document.getElementById("btnAnswer");
+            const fldGroup = document.getElementById("fldGroup");
+            const fldConnection = document.getElementById("fldConnection");
+            const dialog = new bootstrap.Modal("#dlgAnswer", {focus: true});
+
+            fldGroup.textContent = `${DisplayGroupID.trim()}`;
+            fldGroup.style.color = getColorFromGroupColorName(DisplayGroupID.toLowerCase());
+            fldConnection.value = "";
+
+            //console.log(`getGroupGuess: Starting Promise`);
+
+            const getGroupGuessTimeout = setTimeout(()=>{
+              dialog.hide();
+              //console.log(`No Answer Recieved for Group: ${GroupID}`);
+              reject({"answer":"none"});
+            }, 60000);
+
+            btnAnswer.addEventListener('click', () => {
+              //console.log(`Received Answer: ${fldConnection.value} for Group: ${GroupID}`);
+              clearTimeout(getGroupGuessTimeout);
+              dialog.hide();
+              resolve({"answer":fldConnection.value});
+            }, {once: true});
+
+            dlgElement.addEventListener('keydown', function (event) {
+              if (event.keyCode == 13 ) { 
+                if (btnAnswer) {
+                  btnAnswer.click(); // Simulate click on btnAnswer button
+                }
+              }
+            });
+
+            // set focus on the input box to allow keyboard driving
+            //  or popping up the virtual keyboard rapidly also 
+            //  passing once to avoid repeatedly creating event listeners
+            dlgElement.addEventListener('shown.bs.modal', () => {
+              $('#fldConnection').focus();
+            },{once:true});
+
+            dialog.show();
+          });
+        }
+
+        /////////////////////////////////////////////////////////////
+        // showGroupGuess - show the result of the group guess that
+        //                  was made in getGroupGuess for the GroupID
+        /////////////////////////////////////////////////////////////
+        function showGroupGuess(GroupID, DisplayGroupID) {
+          return new Promise((resolve, reject) => {
+            const dlgElement = document.getElementById("dlgCorrect");
+            const btnOkay = document.getElementById("btnOkay");
+            const fldConnectedIdea = document.getElementById("fldConnectedIdea");
+            const fldGroupColor = document.getElementById("fldGroupColor");
+            const fldCorrect = document.getElementById("fldCorrect");
+            const fldSolution = document.getElementById("fldSolution");
+            const dialog = new bootstrap.Modal("#dlgCorrect", {focus: true});
+
+            fldConnectedIdea.textContent = `Your Guess of: "${vUserGuess[GroupID]}" for Group:`;
+            fldGroupColor.textContent = ` ${DisplayGroupID.trim()}`;
+            fldGroupColor.style.color = getColorFromGroupColorName(DisplayGroupID.toLowerCase());
+            if ( isGuessCorrect(GroupID,vUserGuess[GroupID]) ){
+              fldCorrect.style.color = "green";
+              fldCorrect.textContent = "Was Accepted";
+            } else {
+              fldCorrect.style.color = "red";
+              fldCorrect.textContent = "Wasn't Accepted";
+            }
+            fldSolution.textContent = vSolutions[GroupID];
+
+            //console.log(`getGroupGuess: Starting Promise`);
+
+            const showGroupGuessTimeout = setTimeout(()=>{
+              dialog.hide();
+              //console.log(`No Answer Recieved for Group: ${DisplayGroupID}`);
+              reject({"Acknowledged":false});
+            }, 60000);
+
+            btnOkay.addEventListener('click', () => {
+              //console.log(`Acknowledged Answer: ${vUserGuess[GroupID]} for Group: ${GroupID}`);
+              clearTimeout(showGroupGuessTimeout);
+              dialog.hide();
+              resolve({"Acknowledged":true});
+            }, {once: true});
+
+            dlgElement.addEventListener('keydown', function (event) {
+              if (event.keyCode == 13 ) { 
+                if (btnOkay) {
+                  btnOkay.click(); // Simulate click on btnOkay button
+                }
+              }
+            });
+
+            dialog.show();
+          });
+        }
+
+        ////////////////////////////////////////////////////
+        // getGuesses - ask what each group is based upon
+        //              the words / pictures that are seen
+        ////////////////////////////////////////////////////
+        async function getGuesses(){
+          const sets = Array.from(document.getElementsByClassName("set"));
+
+          
+          for( const set of sets){
+            let answer = await getGroupGuess(set.dataset.set, set.dataset.group);
+            vUserGuess[set.dataset.set] = answer["answer"];
+          
+            // add the points to the points total if correct
+            if ( isGuessCorrect(set.dataset.set,vUserGuess[set.dataset.set]) ){
+              let currentScore = parseInt(document.getElementById("fldEarnedPts").textContent);
+              currentScore += 1;
+              document.getElementById("fldEarnedPts").textContent = `${currentScore}`.padStart(2,'0');
+            }
+
+            await showGroupGuess(set.dataset.set, set.dataset.group);
+          }
+        }
+
+        ////////////////////////////////////////////////////
+        // youWon - end of Game (do animation stuff)
+        //
+        ////////////////////////////////////////////////////
+        function youWon(){
+          let container = document.getElementById('categories')
+          container.style.overflowX = "hidden";
+          container.style.overflowY = "hidden";
+          document.body.style.overflow = "hidden";
+
+          for ( smile=0;smile<20;smile++ ){
+            createSmiley();
+          }
+          
+          setInterval(createSmiley, 100); // Adjust interval as desired
+        }
+
+        ////////////////////////////////////////////////////
+        // createSmiley - create a new smiley element and then
+        //                  have it rain down the screen
+        ////////////////////////////////////////////////////
+        var smileyCount = 0;
+
+        function createSmiley() {
+          if (smileyCount >= 100) return; // Limit to 100 smileys
+
+          const smiley = document.createElement('span');
+          smiley.textContent = '😊'; // Replace with your preferred emoji
+          smiley.className = 'smiley';
+          smiley.style.left = `${Math.random() * 100}%`; // Random horizontal position
+          smiley.style.animationDuration = `${Math.random() * 5 + 5}s`; // Vary animation speed
+          smiley.style.position = "absolute";
+          smiley.style.top = "0px";
+          smiley.style.zIndex = "1000";
+          smiley.style.backgroundColor="rgba(255,255,255,0)";
+
+          let container = document.getElementById('categories')
+          container.insertBefore(smiley, container.firstElementChild);
+          smileyCount++;
+
+          // Remove the smiley after animation completes
+          smiley.addEventListener('animationend', () => {
+            smiley.remove();
+            smileyCount--; // Decrement smiley count
+          });          
+        }
+
+        ///////////////////////////////////////////////////////
+        // Start of Running Javascript                       //
+        ///////////////////////////////////////////////////////
+        // the following line is set by NodeJS when requesting the site
+        var vGameDataURL = "<%=gameDataURL%>";
+        //console.log(`gameDataURL = ${vGameDataURL}`);
+
+        var vSets = 0;
+        var vSpots = 0;
+
+        var vAnswers = {};
+        var vSolutions = {};
+
+        var vUserGuess = {};
+
+        addEventListener("resize", (event) => {
+          let elements = Array.from(document.getElementsByClassName("square"));
+          for( element of elements ){
+            clearChildren(element);
+            if ( element.dataset.selected == "true" || element.dataset.group != null ){
+              addSelectOverlay(element);
+            }
+          }
+
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+          //resizeContent();
+          resizeSpots();
+          // get the game data for this specific game
+          fetch(vGameDataURL)
+            .then(resp => resp.json())
+            .then(json => {loadJSONData(json); startNewGame();})
+            .catch(err => console.log(err));
+
+        }, false);
+    </script>
+
+    <%- include('./partials/footer.ejs') %>
+  </body>
+</html>

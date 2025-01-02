@@ -111,45 +111,6 @@ function extractFormatInfoFromLine(fieldDefs, formatData){
   return fieldData;
 }
 
-////////////////////////////////////
-// SSH for offloading heavy tasks
-////////////////////////////////////
-try{
-  conn.on("ready", () => {
-      console.log("Client :: Connected Successfully");
-    }).on("keyboard-interactive", (name, instructions, instructionsLang, prompts, finish) => {
-        // Handle Interactive Prompt
-        const answers = prompts.map((prompt) => {
-          console.log(`ssh2: connection: requesting: ${prompt.prompt}`);
-
-          if (prompt.prompt.includes("Password")) {
-            console.log("\tsending Password");
-            return secretsFile.ssh.password;
-          } else if (prompt.prompt.includes("Verification code")) {
-            // generate TOTP
-            let totpCode = speakeasy.totp({
-              secret: secretsFile.ssh.otp,
-              encoding: "base32",
-            });
-            console.log(`\tsending Verification Code`);
-            return totpCode; // Send the generated TOTP code
-          } else {
-            return ""; // For other prompts, send empty or default responses
-          }
-        });
-        finish(answers);
-      }
-    ).connect({
-      host: secretsFile.ssh.server,
-      port: secretsFile.ssh.port,
-      username: secretsFile.ssh.user,
-      tryKeyboard: true,
-    });
-}catch(error){
-  OMediaDownloader.useLocal = true;
-  console.error(error);
-}
-
 class OMediaDownloader {
   static useLocal = true;
 
@@ -260,6 +221,46 @@ class OMediaDownloader {
 
     this.runCommand(command,readyFunction);
   }
+}
+
+
+////////////////////////////////////
+// SSH for offloading heavy tasks
+////////////////////////////////////
+try{
+  conn.on("ready", () => {
+      console.log("Client :: Connected Successfully");
+    }).on("keyboard-interactive", (name, instructions, instructionsLang, prompts, finish) => {
+        // Handle Interactive Prompt
+        const answers = prompts.map((prompt) => {
+          console.log(`ssh2: connection: requesting: ${prompt.prompt}`);
+
+          if (prompt.prompt.includes("Password")) {
+            console.log("\tsending Password");
+            return secretsFile.ssh.password;
+          } else if (prompt.prompt.includes("Verification code")) {
+            // generate TOTP
+            let totpCode = speakeasy.totp({
+              secret: secretsFile.ssh.otp,
+              encoding: "base32",
+            });
+            console.log(`\tsending Verification Code`);
+            return totpCode; // Send the generated TOTP code
+          } else {
+            return ""; // For other prompts, send empty or default responses
+          }
+        });
+        finish(answers);
+      }
+    ).connect({
+      host: secretsFile.ssh.server,
+      port: secretsFile.ssh.port,
+      username: secretsFile.ssh.user,
+      tryKeyboard: true,
+    });
+}catch(error){
+  OMediaDownloader.useLocal = true;
+  console.error(error);
 }
 
 //~/Documents/programming/yt-dlp/yt-dlp.sh --list-formats https://www.youtube.com/watch?v=IQLn6jgvrN0

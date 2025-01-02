@@ -30,7 +30,6 @@ const axios = require('axios');
 
 // custom JS objects
 const OCategories = require('./categories.js');
-
 const OMediaDownloader = require('./mediadownload.js');
 
 ////////////////////////////////////////////
@@ -420,9 +419,7 @@ app.get('/oauth/yahoo', async (req, res) => {
 });
 
 
-
-
-// Request HTTP/S Paths
+// Request Home Page or Root Path
 app.get('/', (req, res) => {
   res.render('index', {...setSignInInfo(req), title: 'Home Page' });
 });
@@ -470,10 +467,10 @@ app.get('/categories', async (req, res) => {
   }
 
   //console.log(`/categories sending list: ${formattedGameList.join("/r/n")}`);
-  res.render('categories', {...setSignInInfo(req), title: 'Categories Game List', gameData: gameInfo  });
+  res.render('categorieslist', {...setSignInInfo(req), title: 'Categories Game List', gameData: gameInfo  });
 });
 
-
+// validate categories game session data
 async function validateSessionData(req, res, next){
   const gameID = req.params.gameID.replace(':','');
 
@@ -500,6 +497,7 @@ async function validateSessionData(req, res, next){
   next();
 }
 
+// Change file save path depending on whether an update or new game
 async function updateGamePath(req, res, next){
   const gameID = req.params.gameID.replace(':','');
 
@@ -603,7 +601,7 @@ app.get('/categories/edit/:gameID', async (req, res) => {
   }
 
   if ( req.session.authenticated ) {
-    return res.render('create', {...setSignInInfo(req), title: useTitle, gameID: gameID, dataURL: editURL });
+    return res.render('categoriescreate', {...setSignInInfo(req), title: useTitle, gameID: gameID, dataURL: editURL });
   }
 
   res.render('noaccess', {...setSignInInfo(req), title: 'No Access' });
@@ -643,7 +641,7 @@ app.get('/categories/game/:gameID', async (req, res) => {
   }
 
   // Send a success message after serving static files (optional)
-  res.render('game', {...setSignInInfo(req), title: `Categories Game ${gameID}`, madeBy: createdBy, gameDataURL: `/categories/gamedata/:${gameID}` });
+  res.render('categoriesplay', {...setSignInInfo(req), title: `Categories Game ${gameID}`, madeBy: createdBy, gameDataURL: `/categories/gamedata/:${gameID}` });
 });
 
 
@@ -767,7 +765,6 @@ app.post('/video/download/request', upload.none(), async (req, res) => {
   
   res.status(201).json({ downloadUrl })
 });
-
 
 // Retrieve View and Any Stored Messages
 app.get('/chat', (req, res) => {
