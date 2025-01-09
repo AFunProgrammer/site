@@ -1,12 +1,15 @@
 // local child process
-const { exec } = require('child_process');
+const { exec } = require('node:child_process');
+const { spawn } = require('node:child_process');
+const homeDir = require('os').homedir();
 
 //settings
-const secretsFile = require("./private/settings/secrets.json");
+const settings = require("./private/settings/private.json");
 
 // ssh
 const ssh2 = require("ssh2");
 const speakeasy = require("speakeasy");
+const { isGeneratorObject } = require('node:util/types');
 const conn = new ssh2.Client();
 
 // e.g. ID  EXT   RESOLUTION FPS CH │   FILESIZE   TBR PROTO │ VCODEC          VBR ACODEC      ABR ASR MORE INFO
@@ -137,15 +140,35 @@ class OMediaDownloader {
   }
 
   static runLocalCommand(commandString, outputFunction){
-    exec(commandString, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`Error: ${error.message}`);
-        return;
-      }
+    var stdout;
+    var stderr;
     
+    const cmdSpawn = spawn(commandString, [], { shell: true });
+
+    cmdSpawn.stdout.on('data', (data) => {
+      let lines = data.toString().split('\r');
+      for( let line of lines ) {
+        line = line.replace('\n','');
+        console.log(`stdout: ${line}`);
+        stdout += line;// + "\n";
+      };
+    });
+
+    cmdSpawn.stderr.on('data', (data) => {
+      console.error(`stderr: ${data}`);
+      stderr += data;
+    });
+
+    cmdSpawn.on('close', (code) => {
+      console.log(`child process exited with code ${code}`);
       if ( outputFunction )
         outputFunction(stdout,stderr);
-    });    
+    });
+
+    cmdSpawn.on('error', (error) => {
+      console.log(`error in spawning ${commandString}`);
+      console.error(error);
+    });
   }
 
   static runCommand(commandString, outputFunction){
@@ -182,6 +205,11 @@ class OMediaDownloader {
   }
 
   static decipherMediaInfo(stdout,stderr){
+    if ( stdout == null ){
+      console.log(`deipherMediaInfo: no stdout data to decipher from`);
+      return;
+    }
+
     console.log(`received errors: ${stderr}`);
     const lines = stdout.split('\n');
     let formatData = new Array();
@@ -223,7 +251,6 @@ class OMediaDownloader {
   }
 }
 
-
 ////////////////////////////////////
 // SSH for offloading heavy tasks
 ////////////////////////////////////
@@ -237,11 +264,11 @@ try{
 
           if (prompt.prompt.includes("Password")) {
             console.log("\tsending Password");
-            return secretsFile.ssh.password;
+            return settings.ssh.password;
           } else if (prompt.prompt.includes("Verification code")) {
             // generate TOTP
             let totpCode = speakeasy.totp({
-              secret: secretsFile.ssh.otp,
+              secret: settings.ssh.otp,
               encoding: "base32",
             });
             console.log(`\tsending Verification Code`);
@@ -253,15 +280,17 @@ try{
         finish(answers);
       }
     ).connect({
-      host: secretsFile.ssh.server,
-      port: secretsFile.ssh.port,
-      username: secretsFile.ssh.user,
+      host: settings.ssh.server,
+      port: settings.ssh.port,
+      username: settings.ssh.user,
       tryKeyboard: true,
     });
 }catch(error){
   OMediaDownloader.useLocal = true;
   console.error(error);
 }
+
+
 
 //~/Documents/programming/yt-dlp/yt-dlp.sh --list-formats https://www.youtube.com/watch?v=IQLn6jgvrN0
 module.exports = OMediaDownloader;
