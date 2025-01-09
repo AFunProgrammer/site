@@ -470,70 +470,6 @@ app.get('/categories', async (req, res) => {
   res.render('categorieslist', {...setSignInInfo(req), title: 'Categories Game List', gameData: gameInfo  });
 });
 
-// validate categories game session data
-async function validateSessionData(req, res, next){
-  const gameID = req.params.gameID.replace(':','');
-
-  if ( !req.session.authenticated ) {
-    return res.status(401).send('Access denied. Please sign in first.');
-  }
-
-  try {
-    if ( gameID != "New" ){
-      // Need to validate that the session also controls
-      //  the updating of the game data (if the data exists)
-      let createdByInfo = await loadCreatedByInfo(OCategories.getGamePath(gameID));
-      if ( createdByInfo ){
-        if( req.session.userId != serverDecrypt(createdByInfo['email']) ){
-          return res.status(401).send('Access denied. You are not the creator of this Game');
-        }
-      }      
-    }
-  } catch( error ) {
-    console.error( `validateSessionData:`, error );
-    return res.status(500).send('Server Error'); // Send error response
-  }
-
-  next();
-}
-
-// Change file save path depending on whether an update or new game
-async function updateGamePath(req, res, next){
-  const gameID = req.params.gameID.replace(':','');
-
-  // clear the parameter
-  setGamePath = "";
-
-  // check to validate data actually came before further processing of the directory
-  if ( req.body == null ){
-    console.log(`updateGamePath: Received No FormData`);
-    return res.status(401).send('Access denied. You are not the creator of this Game');
-  }
-
-  // if not a new game then do some extra processing
-  if ( gameID != "New" ){
-    setGamePath = gameID;
-
-    try {
-      // get the gamePath that should exist
-      const gamePath = OCategories.getGamePath(gameID);
-      // get the list of files from the directory
-      const files = fs.readdirSync(gamePath);
-      // clear the directory of any data before processing
-      files.forEach(file => {
-        const filePath = path.join(gamePath,file);
-        fs.rmSync(filePath);
-        //console.log(`Removed file: ${filePath}`);
-      });
-    } catch (error) {
-      console.error( `updateGamePath:`, error );
-      return res.status(500).send('Server Error'); // Send error response
-    }   
-  }
-
-  next();
-}
-
 // Posting a created or editted game
 app.post('/categories/gamedata/:gameID', validateSessionData, updateGamePath, upload.any(), (req, res) => {
   let gameID = req.params.gameID.replace(':','');  // set the gameID to a string without the colon...
@@ -558,7 +494,6 @@ app.post('/categories/gamedata/:gameID', validateSessionData, updateGamePath, up
 
   res.status(201).json({ redirectUrl })
 });
-
 
 // Playing Actual Categories Game
 app.get('/categories/gamedata/:gameID', (req, res) => {
@@ -726,6 +661,10 @@ app.get('/dailyscripture/day/:date', async (req, res) => {
   return res.status(404).render('404',{...setSignInInfo(req), title: 'DSR Not Finished', notFoundMsg: 'This Is Not Yet Done'});
 });
 
+
+///////////////////////////////////////////////////////////
+// Media and Video
+///////////////////////////////////////////////////////////
 // Play a video
 app.get('/video/play/:videoID', async (req, res) => {
   const videoID = req.params.videoID.replace(':','');  // set the videoID to a string without the colon...
@@ -766,6 +705,10 @@ app.post('/video/download/request', upload.none(), async (req, res) => {
   res.status(201).json({ downloadUrl })
 });
 
+
+///////////////////////////////////////////////////////////
+// Chat Application
+///////////////////////////////////////////////////////////
 // Retrieve View and Any Stored Messages
 app.get('/chat', (req, res) => {
   let userName = "Anonymous";
@@ -818,8 +761,47 @@ app.post('/chat/messages', (req, res) => {
   });
 });
 
+///////////////////////////////////////////////////////////
+//
+// Receiving Game Input Data:
+//
+///////////////////////////////////////////////////////////
+app.post('/gamedata/getuniqueid/:gameType', upload.none(), async (req, res) => {
+  let gameType = req.params.gameType.replace(':','');  // set the gameType to a string without the colon...
+  
+  console.log(`received gametype: ${gameType}`);
+
+  let uniqueID = uuid.v4();
+  res.status(201).json({ uniqueID });
+});
+
+app.post('/gamedata/:gameid', upload.none(), async (req, res) => {
+  let gameType = req.params.gameType.replace(':','');  // set the gameType to a string without the colon...
+
+  if ( req.body == null ){
+    return;
+  }
+  const stringed = JSON.stringify(req.body, null, 2);
+  console.log(`Received Game Data For: ${gameType}`);
+
+  // decipher data from the req body
+  const items = JSON.parse(stringed, (key, value) => {
+    if ( key == 'user' ){
+      user = value;
+      //console.log('Found Chat User: ' + user);
+    }
+    if ( key == 'chat' ){
+      message = value;
+      //console.log('Found Chat Message: ' + message);
+    }
+  });
+  res.status(201);
+});
 
 
+///////////////////////////////////////////////////////////
+// Error Handling
+///////////////////////////////////////////////////////////
 app.use((error, req, res, next) => {
   console.log(`received error: ${error}`);
   console.log('This is the rejected field ->', error.field);
@@ -828,8 +810,9 @@ app.use((error, req, res, next) => {
   console.log("------------ End of Request Body ----------------")  
 });
 
-
-
+////////////////////////////////////////////////////////////////////////
+// Middleware Functions - i.e. "not found"
+////////////////////////////////////////////////////////////////////////
 app.use((req, res) => {
   res.status(404).render('404',{...setSignInInfo(req), title: 'Site Not Found', notFoundMsg: '404 - URL not found on server' });
 });
@@ -837,7 +820,6 @@ app.use((req, res) => {
 ////////////////////////////////////////////////////////////////////////
 // Defined Functions To Be Used In The
 // Processing of the Path Data for the URLS
-//
 ////////////////////////////////////////////////////////////////////////
 
 /**
@@ -851,6 +833,10 @@ function isSecure(req) {
   return req.secure;
 };
 
+///////////////////////////////////////////////////////////
+// Functions for Encrypting User Information and
+//  retrieving it for use in the application
+///////////////////////////////////////////////////////////
 /**
  * Submits user creation information and saves it as a blob.
  * @param {Object} req - The request object containing session and IP information.
@@ -936,6 +922,10 @@ function saveCreatedByInfo(req, filePath) {
   }
 }
 
+
+///////////////////////////////////////////////////////////
+// Sign-In Information
+///////////////////////////////////////////////////////////
 function setSignInInfo(req){
   const signInInfo = {
     signedInType:'Not Signed In',
@@ -982,6 +972,74 @@ function signedOut(req) {
   req.session.authenticated = false;
   req.session.userId = null;
   req.session.userName = null;
+}
+
+
+///////////////////////////////////////////////////////////
+// Validating and Processing of Categories Game Data
+///////////////////////////////////////////////////////////
+// validate categories game session data
+async function validateSessionData(req, res, next){
+  const gameID = req.params.gameID.replace(':','');
+
+  if ( !req.session.authenticated ) {
+    return res.status(401).send('Access denied. Please sign in first.');
+  }
+
+  try {
+    if ( gameID != "New" ){
+      // Need to validate that the session also controls
+      //  the updating of the game data (if the data exists)
+      let createdByInfo = await loadCreatedByInfo(OCategories.getGamePath(gameID));
+      if ( createdByInfo ){
+        if( req.session.userId != serverDecrypt(createdByInfo['email']) ){
+          return res.status(401).send('Access denied. You are not the creator of this Game');
+        }
+      }      
+    }
+  } catch( error ) {
+    console.error( `validateSessionData:`, error );
+    return res.status(500).send('Server Error'); // Send error response
+  }
+
+  next();
+}
+
+// Change file save path depending on whether an update or new game
+async function updateGamePath(req, res, next){
+  const gameID = req.params.gameID.replace(':','');
+
+  // clear the parameter
+  setGamePath = "";
+
+  // check to validate data actually came before further processing of the directory
+  if ( req.body == null ){
+    console.log(`updateGamePath: Received No FormData`);
+    return res.status(401).send('Access denied. You are not the creator of this Game');
+  }
+
+  // if not a new game then do some extra processing
+  if ( gameID != "New" ){
+    setGamePath = gameID;
+
+    try {
+      // get the gamePath that should exist
+      const gamePath = OCategories.getGamePath(gameID);
+      // get the list of files from the directory
+      const files = fs.readdirSync(gamePath);
+      // clear the directory of any data before processing
+      files.forEach(file => {
+        const filePath = path.join(gamePath,file);
+        fs.rmSync(filePath);
+        //console.log(`Removed file: ${filePath}`);
+      });
+    } catch (error) {
+      console.error( `updateGamePath:`, error );
+      return res.status(500).send('Server Error'); // Send error response
+    }   
+  }
+
+  next();
 }
 
 
