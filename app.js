@@ -38,7 +38,7 @@ const OMediaDownloader = require('./mediadownload.js');
 var lastMulterDirectory = '';
 var setGamePath = "";
 var messages = [];
-const secretsFile = require('./private/settings/secrets.json');
+const settings = require('./private/settings/private.json');
 // DEV - LocalHost
 const envFile = require('./private/settings/local.json');
 // PROD - WebSite
@@ -52,7 +52,7 @@ var sessionOptions = {
   },
   resave: false,
   saveUninitialized: true,
-  secret: secretsFile.secrets.session,
+  secret: settings.secrets.session,
   store
 };
 
@@ -164,7 +164,6 @@ app.disable('x-powered-by')
 
 // Express Setup
 app.set('view engine', 'ejs');
-
 
 ////////////////////////////////////////////////////////
 // Processing of Connection and Requests
@@ -658,7 +657,7 @@ app.post('/dailyscripture/entry/:date', async (req, res) => {
   let redirectUrl = "/";
   let useDate = "New";
   
-  if ( !req.session.authenticated || req.session.userID != secretsFile.secrets.bloguser ) {
+  if ( !req.session.authenticated || req.session.userID != settings.blog.user ) {
     return; // no entry is allowed
   }
 
@@ -682,7 +681,7 @@ app.get('/dailyscripture/entry/:date', async (req, res) => {
   let userName = 'Daily Scripture';
   const date = req.params.date.replace(':','');  // set the date to a string without the colon...  
   
-  if ( !req.session.authenticated || req.session.userId != secretsFile.secrets.bloguser ) {
+  if ( !req.session.authenticated || req.session.userId != settings.blog.user ) {
     return res.render('noaccess', {...setSignInInfo(req), title: 'Only The Site Administrator Is Allowed To Do This' });
   }
 
@@ -697,7 +696,7 @@ app.get('/dailyscripture/entry/:date', async (req, res) => {
 //// View a daily scripture entry
 app.get('/dailyscripture/day/:date', async (req, res) => {
   const date = req.params.date.replace(':',''); // set the date to a string without the colon...
-  let userID = secretsFile.secrets.bloguser;
+  let userID = settings.blog.user;
   let blogID = date;
   let blogExists = false;
   
