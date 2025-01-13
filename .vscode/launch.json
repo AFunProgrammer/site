@@ -12,7 +12,10 @@
         "<node_internals>/**"
       ],
       "cwd": "${workspaceFolder}",
-      "program": "${workspaceFolder}/app.js"
+      "program": "${workspaceFolder}/app.js",
+      "env": {
+        "NODE_OPTIONS": ""
+      }
     }
   ]
 }

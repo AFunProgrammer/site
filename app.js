@@ -31,6 +31,7 @@ const axios = require('axios');
 // custom JS objects
 const OCategories = require('./categories.js');
 const OMediaDownloader = require('./mediadownload.js');
+const OBlog = require('./blog.js');
 
 ////////////////////////////////////////////
 // Global Variables:
@@ -652,32 +653,73 @@ app.get('/categories/game/:gameID', async (req, res) => {
 ////////////////////////////////////////////////////////////////
 
 //// Post a new daily scripture blog entry
-app.post('/dailyscripture/entry/:date', async (req, res) => {
-  const date = req.params.date.replace(':','');  // set the date to a string without the colon...  
+app.post('/blog/entry/:blogID', async (req, res) => {
+  const blogID = req.params.blogID.replace(':','');  // set the date to a string without the colon...  
   let redirectUrl = "/";
-  let useDate = "New";
   
-  if ( !req.session.authenticated || req.session.userID != settings.blog.user ) {
-    return; // no entry is allowed
+  if ( req.body === undefined || !req.session.authenticated ){
+    return;
   }
 
+  const blogEntry = new formidable.IncomingForm();
 
-  // Add new game to the game list
-  try {
-    // Save the session information
-    //saveCreatedByInfo(req,[OptionsOnSavePath]);
-    redirectUrl = `/dailyscripture/day/:${useDate}`
-  } catch (error) {
-    console.error(`app.post('/dailyscripture/entry/:${gameID}`, error);
-    return res.status(500).send('Server error occurred');
-  }
+  blogEntry.parse(req, (err, fields, files) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send('Error Parsing Blog Entry');
+    }
 
-  res.status(201).json({ redirectUrl })
+    console.log('Fields:', fields);
+    console.log('Files:', files);
+
+    // Add a new blog entry in to the database
+    try {
+      // Save the session information
+      //saveCreatedByInfo(req,[OptionsOnSavePath]);
+      redirectUrl = `/blog/entry/:${blogID}`
+
+      console.log(req.body.toString());
+
+      let blogData = [];
+
+      blogData["title"] = fields.title;
+      blogData["content"] = fields.content;
+      blogData["attachment"] = files.attachment[0]; //only grab first attachment
+      blogData["background"] = fields.background;
+      
+      OBlog.getGlobalInstance().addBlog(req.session.userId, blogData);
+    } catch (error) {
+      console.error(`app.post('/blog/entry/:${blogID}`, error);
+      return res.status(500).send('Server error occurred while processing blog data');
+    }
+
+    res.status(201).json({ redirectUrl });
+  });
+
 });
 
 //// Create or edit a blog entry
+app.get('/blog/entry/:blogId', async (req, res) => {
+  let useTitle = 'Create New Blog Entry';
+  const useBlogId = req.params.blogId.replace(':','');  // set the date to a string without the colon...  
+  
+  if ( !req.session.authenticated ) {
+    return res.render('noaccess', {...setSignInInfo(req), title: 'You Must Be Logged In To Use This Feature' });
+  }
+
+  try {
+  } catch(error) {
+    console.error(error);
+  }
+
+
+  res.render('blogentry', {...setSignInInfo(req), title: useTitle, blogUser: req.session.userName, blogId: useBlogId });
+});
+
+
+//// Create or edit daily scripture entry...
 app.get('/dailyscripture/entry/:date', async (req, res) => {
-  let useTitle = 'Create New Daily Scripture Entry';
+  let useTitle = 'Create New Blog Entry';
   let userName = 'Daily Scripture';
   const date = req.params.date.replace(':','');  // set the date to a string without the colon...  
   
@@ -696,12 +738,12 @@ app.get('/dailyscripture/entry/:date', async (req, res) => {
 //// View a daily scripture entry
 app.get('/dailyscripture/day/:date', async (req, res) => {
   const date = req.params.date.replace(':',''); // set the date to a string without the colon...
-  let userID = settings.blog.user;
-  let blogID = date;
+  let userId = settings.blog.user;
+  let blogId = date;
   let blogExists = false;
   
   try {
-    //blogExists = OBlogs.doesBlogExist(userID, blogID);
+    //blogExists = OBlogs.doesBlogExist(userId, blogId);
   } catch(error) {
     console.error(error);
   }
@@ -715,7 +757,7 @@ app.get('/dailyscripture/day/:date', async (req, res) => {
   }
 
   try{
-    //let blogEntry = await OBlogs.getBlogEntry(userID, blogID);
+    //let blogEntry = await OBlogs.getBlogEntry(userId, blogId);
   } catch(error) {
     console.error(error);
   }
@@ -991,3 +1033,14 @@ OCategories.getCurrentGame();
 
 console.log('Global: Code Verifier:', codeVerifier);
 console.log('Global: Code Challenge:', codeChallenge);
+
+console.log('-----------------------------------------');
+console.log('Testing Blog Connectors:')
+let helloID = uuid.v4().toString();
+console.log(`embedding uuid: ${helloID} in HelloWorld.txt file`);
+OBlog.getGlobalInstance().filWriteFile('HelloWorld.txt',`Hello World UUID: ${helloID}`);
+let data = OBlog.getGlobalInstance().filReadFile('HelloWorld.txt');
+console.log(`data returned from reading file of HelloWorld.txt: ${data}`)
+console.log('End Testing Blog Connectors:')
+console.log('-----------------------------------------');
+
