@@ -6,7 +6,7 @@
     <!-- Include stylesheet -->
     <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet" />
     <style>
-      body{
+      body {
         background-color: #f5efe6;
       }
       body::before {
@@ -22,7 +22,7 @@
         opacity: 0.20; /* Adjust the value as needed */
         z-index: -1; /* Ensure it stays behind other content */
       }
-    </style>     
+    </style>
   </head>
 
   <body>
@@ -39,12 +39,8 @@
           <div id="editor" class="border border-2 border-primary bg-white-transparent-50" style="height: 300px;"></div>
         </div>
         <div class="form-group">
-          <label for="fileUpload">Upload Files</label>
-          <input type="file" class="form-control-file" id="fileUpload" multiple>
-        </div>
-        <div class="form-group">
-          <label for="attachments">Attachments</label>
-          <ul id="attachments" class="list-group"></ul>
+          <label for="fileUpload">Upload File</label>
+          <input type="file" class="form-control-file" id="fileUpload" accept="image/*,video/*,.pdf">
         </div>
         <button type="submit" class="btn btn-primary">Submit</button>
       </form>
@@ -57,34 +53,43 @@
       // Initialize Quill editor
       var quill = new Quill('#editor', {placeholder: 'Blog Entry', theme: 'snow'});
 
-      // Handle file uploads
-      document.getElementById('fileUpload').addEventListener('change', function(event) {
-        var files = event.target.files;
-        var attachmentsList = document.getElementById('attachments');
-        attachmentsList.innerHTML = '';
-        for (var i = 0; i < files.length; i++) {
-          var listItem = document.createElement('li');
-          listItem.className = 'list-group-item';
-          listItem.textContent = files[i].name;
-          attachmentsList.appendChild(listItem);
-        }
-      });
-
       // Handle form submission
       document.getElementById('blogForm').addEventListener('submit', function(event) {
         event.preventDefault();
         var title = document.getElementById('title').value;
         var content = quill.root.innerHTML;
-        var attachments = [];
-        var files = document.getElementById('fileUpload').files;
-        for (var i = 0; i < files.length; i++) {
-          attachments.push(files[i].name);
-        }
-        console.log('Title:', title);
-        console.log('Content:', content);
-        console.log('Attachments:', attachments);
-        // Add your form submission logic here
+        var fileInput = document.getElementById('fileUpload');
+        var attachment = fileInput.files[0];
+        var formData = new FormData();
+        formData.append('title', title);
+        formData.append('content', content);
+        formData.append('attachment', attachment);
+        formData.append('background', '0');
+
+        console.log(`formData being submitted:`);
+        console.log(formData);
+        
+
+        jQuery.ajax({
+          url: `/blog/entry/:${g_submitBlogId}`,
+          data: formData,
+          cache: false,
+          contentType: false,
+          processData: false,
+          method: 'POST',
+          type: 'POST', // For jQuery < 1.9
+          success: function(response, status, xhr){
+            if (response.redirectUrl){
+              //window.location.href = response.redirectUrl;
+            }
+          },
+          error: function(error) {
+            console.error('Blog Entry: error in submission:', error);
+          }
+        });
       });
+
+      const g_submitBlogId = "<%=blogId%>";
     </script>
     <%- include('./partials/footer.ejs') %>
   </body>

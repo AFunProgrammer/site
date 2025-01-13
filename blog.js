@@ -1,205 +1,208 @@
+// OS requirements
 const fs = require('fs');
 const path = require('path');
+
+// Utility requirements
+const crypto = require('crypto');
+const uuid = require('uuid');
+
+//settings
+const settings = require("./private/settings/private.json");
+
+const { Client } = require('pg');
+
+// Define connection parameters
+//  server: postgresSettings.postgres.server -> ip address
+//  port: postgresSettings.postgres.port -> default of 5432
+//  password: postgresSettings.postgres.password -> text string
+//  there is no user specified for the docker postgres instance...
+const client = new Client({ /* Need To Fill In Data */ });
+
 
 // Class and Object Definitions
 // Manage Blog User Data
 //  neatly and concisely as a static object
 //  to make it clear all the functions and 
 //  variables needed to work properly
-class OBlogs{
-  static #rootPath = __dirname + "/private/blogs";
-  static #userList = [];
 
-  static getBlogPath(userID){
-    let blogPath = "";
-    try {    
-      blogPath = path.normalize(`${this.#rootPath}/${userID}`); //path to the game to load up
-    } catch(error) {
-      console.error(error);
-      throw(error);
-    }
+class OBlog {
+  // Static variable to hold the single instance of the class
+  static globalInstance;
 
-    return blogPath;
-  }
-
-
-  static getBlogFromDisk(userID){
-    let number = 0;
-    // Read the content of the file
-    try {
-      // Read the content of the file synchronously
-      const data = fs.readFileSync(this.#nextGameNumFile, 'utf8');
+  constructor(postgresSettings, fileSettings) {
+      // Initialize with settings from private.json
+      this.sqlSettings = postgresSettings;
+      this.filSettings = fileSettings;
       
-      // Parse the number, increment it, and convert it back to a string
-      number = parseInt(data, 10);
-      
-      console.log(`Retrieved Current Game From Disk: ${number}`);
-    } catch (err) {
-      console.error('getCurrentGAmeFromDisk Error occurred:', err);
+      // Other initialization code might go here
+      this.setupError = false; // no issues found with settings
+      this.createBlogTable();
+      this.filPathExists();
     }
-    
-    // return the number but as a string with at least 5 digits in it
-    //  this makes the directories look a little nicer and better
-    //  visual ordering of the directories when examining (e.g. 0 => "00000")
-    this.#currentGameNum = number.toString().padStart(5, '0');
+
+  static getGlobalInstance() {
+    if (OBlog.globalInstance === undefined) {
+      OBlog.globalInstance = new OBlog(settings.blog.postgres, settings.blog.files);
+    }
+
+    return OBlog.globalInstance;
   }
 
-  // userIDExist
-  static blogExists(userID){
-    let blogPath = this.getBlogPath(userID);
-    
-    try {
-      // check to see if the path to the game exists
-      return fs.existsSync(blogPath);
-    } catch(err) {
-      console.error('OBlogs::userIDExists: Error occurred:', err);
+  filPathExists(){
+    if( fs.existsSync(this.filSettings.path) == false ){
+      this.setupError = true;
     }
-
-    return false;
   }
 
-  // getGameFiles - Get the list of files associated with a specific userID
-  static getBlogFiles(userID){
-    let blogPath = this.getblogPath(userID); //path to the game to load up
-    let gameFiles = [];
-
-    try {
-      // check to see if the path to the game exists
-      if( this.userIDExists(userID) == false ){
-        console.log(`OBlogs::getGameFiles: checking for userID: ${userID} returned error`);
-        return null;
-      }   
-    
-      let files = fs.readdirSync(blogPath, {withFileTypes: true});
-      files.forEach( file => {
-        if ( file.isFile() ){
-          gameFiles.push(file.name);
-        }
-        //console.log(`OBlogs::getGameFiles: file found: ${file.name}`);
-      });
-    } catch (err) {
-      console.error('OBlogs::getGameFiles: Error occurred:', err);
-      return null;
+  filWriteFile(fileName, Contents){
+    if ( this.setupError == true ){
+      console.log(`filWriteFile: Cannot Write, Setup Error`);
+      return;
     }
 
-    return gameFiles;
+    let savePath = path.normalize(this.filSettings.path + '/' + fileName);
+
+    try {
+      fs.writeFileSync(savePath, Contents);
+      console.log(`filWriteFile: wrote file: ${fileName}`);
+    }catch(err){
+      console.error(`filWriteFile: failed to call writeFile:`, err);
+    }
   }
 
-  static loadAndConvertFile(filePath, format){
-    if ( filePath == "" || format == "" ){
-      console.log(`OBlogs::loadAndConvertFile: invalid FilePath: ${filePath} or Format: ${format}`);
-      return null;
+  filReadFile(fileName){
+    if ( this.setupError == true ){
+      console.log(`filWriteFile: Cannot Write, Setup Error`);
+      return;
     }
 
+    let readPath = path.normalize(this.filSettings.path + '/' + fileName);
+    let data = "";
+
     try {
-      // check to see if the file exists
-      if( fs.existsSync(filePath) == false ){
-        console.log(`OBlogs::loadAndConvertFile: checking for path:${filePath} returned error`);
-        return null;
+      // Check to see if the file exists
+      if ( fs.existsSync(readPath) == false ){
+        console.log(`filReadFile: file does not exist: ${fileName}`);
+        return;
       }
-    } catch (err) {
-      console.error('OBlogs::loadAndConvertFile: error occurred', err);
+      // Read the file
+      data = fs.readFileSync(readPath, 'utf8');
+    }catch(err){
+      console.error(`filReadFile: failed to call readFileSyn:`, err);
     }
 
-    let extPeriodIdx = filePath.lastIndexOf('.');
-    let fileExt = filePath.substring(extPeriodIdx+1).toUpperCase();
-    let fileBlob = null;
+    return data;
+  }
+
+  async createBlogTable(){
+    const sqlCreateTable = `CREATE TABLE blog 
+                            ( 
+                              id uuid PRIMARY KEY DEFAULT uuid_generate_v4(), 
+                              user text, 
+                              title text, 
+                              content text, 
+                              attachment text, 
+                              background text,
+                              created timestamp with time zone NOT NULL DEFAULT (current_timestamp AT TIME ZONE 'UTC')
+                            );`;
     
-    if ( fileExt.localeCompare("PNG") == 0 ){
-      fileBlob = this.loadAndConvertPNG(filePath, format);
-    } else if ( fileExt.localeCompare("TXT") == 0 ) {
-      fileBlob = this.loadAndConvertTXT(filePath, format);
-    }
-
-    return fileBlob;
-  }
-
-  static loadAndConvertPNG(pngPath,format){
-    let fileData = null;
-    try {
-      // Load the file and convert to a string if necessary
-      fileData = fs.readFileSync(pngPath, {encoding: null});
-      fileData = fileData.toString('base64');
-    } catch (err) {
-      console.error('OBlogs::loadAndConvertPNG: error occurred', err);
-    }
-
-    return fileData;
-  }
-
-  static loadAndConvertTXT(txtPath,format){
-    let fileData = null;
-    try {
-      // Load the file and convert to a string if necessary
-      fileData = fs.readFileSync(txtPath, {encoding: 'utf8'});
-    } catch (err) {
-      console.error('OBlogs::loadAndConvertTXT: error occurred', err);
-    }
-
-    return fileData;
-  }
-
-  static getBlogDataAsJSON(userID){
-    let blogPath = this.getblogPath(userID); //path to the game to load up
-    let gameFiles = null;
-    let gameData = [];
-    let jsonData = "";
-
-    try {
-      gameFiles = this.getGameFiles(userID);
-
-      if ( gameFiles == null || gameFiles.length == 0 ){
-        console.log(`OBlogs::getGameData: no files found for userID: ${userID}`);
-        return null;
-      }
-
-      for ( const file of gameFiles ){
-        // ignore 'createdby.txt' to avoid sending sensitive data from the server
-        if ( path.parse(file)['base'] == 'createdby.txt' ){
-          continue;
-        }
-
-        let filePath = path.normalize(`${blogPath}/${file}`);
-        let fileInfo = this.getMetaDataFromName(file);
-        fileInfo["data"] = this.loadAndConvertFile(filePath);
-
-        gameData.push(fileInfo);
-      }
-
-      jsonData = JSON.stringify(gameData,null,2);
-      //console.log(`OBlogs::getGameData: JSON Data: ${jsonData}`);
-    } catch (err) {
-      console.error('getGameData Error occurred:', err);
-    }
-
-    return jsonData;
-  }
-
-
-  static getBlogUsersFromDisk(){
-    if ( (this.#listAtGameNum == this.#currentGameNum) &&
-       (this.#listAtGameNum.localeCompare("-1") >= 1) ){
-      return; //list already retrieved and no new games added
-    }
-
-    let files = fs.readdirSync(this.#rootPath, {withFileTypes: true});
-
-    this.#gameList = [];
-
-    files.forEach( file => {
-      if ( file.isDirectory() ){
-        this.#gameList.push(file.name);
-      }
-      //console.log(`getGameListFromDisk: file found: ${file.name}`);
+    client.query(sqlCreateTable, (err, res) => {
+      if (err) { 
+        console.error(err); 
+      } else { 
+        console.log('createBlogTable: \'blog\' table was created successfully'); 
+      } 
     });
-
-    this.#listAtGameNum = this.#currentGameNum;
   }
+
+
+  // get list of userIDs to get blogs
+  getBloggers(){
+
+  }
+
+  // get list of blogs for userID
+  getUserBlogs(userID){
+
+  }
+
+  // get blog for userID
+  getBlog(userID, blogID){
+
+  }
+
+  getBlogTextualData(userID, blogID){
+
+  }
+
+  getBlogAttachments(userID, blogID){
+
+  }
+
+  // add new blog for userID with blogData
+  async addBlog(userID, blogData){
+    const blogTitle = blogData["title"]; // text
+    const blogContent = blogData["content"]; // text
+    const blogAttachment = blogData["attachment"]; // array
+    const blogBackground = blogData["background"];
+
+    const uuidFileName = this.generateUuidForFile(blogAttachment.originalFilename);
+
+    const queryInsert = "INSERT INTO blog (user, title, content, attachment, background) VALUES(%1,%2,%3,%4,%5);"
+    const queryValues = [userID, blogTitle, blogContent, uuidFileName, blogBackground];
+
+    console.log(userID);
+    console.log(blogData);
+    console.log(queryInsert);
+    console.log(queryValues);
+    return;
+
+    try {
+      const result = await client.query(queryInsert, queryValues);
+      console.log('addBlog: row inserted successfully:', result);
+    } catch(err) {
+      console.error('addBlog: error when inserting row:', err);
+    }
+
+  }
+
+  // del[ete] blog for userID using blogID
+  delBlog(userID, blogID){
+      // also delete any files on the samba share for that blog
+
+  }
+
+  // generate thumbnails to be store in the db itself
+  generateThumbnail(file){
+
+  }
+
+  // no larger than 512x512
+  generateThumbnailFromImage(file){
+
+  }
+
+  // get a frame at some time in to video where not black, no larger than 512,512
+  generateThumbnailFromVideo(file){
+
+  }
+
+  // use a image list file or similar to get an icon that matches the extension of the file
+  generateThumbnailFromFileType(file){
+
+  }
+
+  generateUuidForFile(fileName){
+    if ( fileName === undefined ){
+      return "error";
+    }
+    const fileExt = path.extname(fileName);
+    const baseName = uuid.v4().toString();
+    const uuidFileName = `${baseName}${fileExt}`;
+
+    return uuidFileName;
+  }
+
 };
 
-// have to do an export statement rather than doing an export keyword
-//  this was very confusing and I spent 20-30 minutes trying to solve
-//  this very dumb error for important a class from a file that is
-//  loaded in to NodeJS using require('./categories.js')
-
-module.exports = OBlogs;
+module.exports = OBlog;
