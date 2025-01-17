@@ -1,44 +1,35 @@
-// OS requirements
 const fs = require('fs');
 const path = require('path');
-
-// Utility requirements
-const crypto = require('crypto');
 const uuid = require('uuid');
 
-//settings
+// settings
 const settings = require("./private/settings/private.json");
+// secure functions
+const { serverObfuscateData } = require('./private/code/crypto_utils.js');
 
+
+// required connectivity modules
 const { Client } = require('pg');
 
-// Define connection parameters
-//  server: postgresSettings.postgres.server -> ip address
-//  port: postgresSettings.postgres.port -> default of 5432
-//  password: postgresSettings.postgres.password -> text string
-//  there is no user specified for the docker postgres instance...
-const client = new Client({ /* Need To Fill In Data */ });
-
-
-// Class and Object Definitions
-// Manage Blog User Data
-//  neatly and concisely as a static object
-//  to make it clear all the functions and 
-//  variables needed to work properly
+const client = new Client({
+  host: settings.blog.postgres.server,
+  port: settings.blog.postgres.port || 5432,
+  user: settings.blog.postgres.user,
+  password: settings.blog.postgres.password,
+  database: settings.blog.postgres.database
+});
 
 class OBlog {
-  // Static variable to hold the single instance of the class
   static globalInstance;
 
   constructor(postgresSettings, fileSettings) {
-      // Initialize with settings from private.json
-      this.sqlSettings = postgresSettings;
-      this.filSettings = fileSettings;
-      
-      // Other initialization code might go here
-      this.setupError = false; // no issues found with settings
-      this.createBlogTable();
-      this.filPathExists();
-    }
+    this.sqlSettings = postgresSettings;
+    this.filSettings = fileSettings;
+
+    this.setupError = false;
+    this.createBlogTable();
+    this.filePathExists();
+  }
 
   static getGlobalInstance() {
     if (OBlog.globalInstance === undefined) {
@@ -48,31 +39,52 @@ class OBlog {
     return OBlog.globalInstance;
   }
 
-  filPathExists(){
-    if( fs.existsSync(this.filSettings.path) == false ){
+  filePathExists() {
+    if (!fs.existsSync(this.filSettings.path)) {
       this.setupError = true;
     }
   }
 
-  filWriteFile(fileName, Contents){
-    if ( this.setupError == true ){
-      console.log(`filWriteFile: Cannot Write, Setup Error`);
+  fileCopy(dstFileName, srcFileName){
+    if (this.setupError) {
+      console.log(`fileCopy: Cannot Write, Setup Error`);
+      return;
+    }
+
+    let savePath = path.normalize(this.filSettings.path + '/' + dstFileName);
+
+    try {
+      fs.copyFile(srcFileName, savePath, fs.constants.COPYFILE_EXCL, (err) => {
+        if (err) {
+          console.error(`fileCopy: failed to copy file: ${srcFileName}`, err);
+        } else {
+          console.log(`fileCopy: moved file: ${srcFileName} to ${savePath}`);
+        }
+      });
+    } catch (err) {
+      console.error(`fileCopy: failed to copy file: ${srcFileName}`, err);
+    }
+  }
+
+  fileWrite(fileName, fileBlob) {
+    if (this.setupError) {
+      console.log(`fileWrite: Cannot Write, Setup Error`);
       return;
     }
 
     let savePath = path.normalize(this.filSettings.path + '/' + fileName);
 
     try {
-      fs.writeFileSync(savePath, Contents);
-      console.log(`filWriteFile: wrote file: ${fileName}`);
-    }catch(err){
-      console.error(`filWriteFile: failed to call writeFile:`, err);
+      fs.writeFileSync(savePath, Buffer.from(fileBlob));
+      console.log(`fileWrite: wrote file: ${fileName}`);
+    } catch (err) {
+      console.error(`fileWrite: failed to write file:`, err);
     }
   }
 
-  filReadFile(fileName){
-    if ( this.setupError == true ){
-      console.log(`filWriteFile: Cannot Write, Setup Error`);
+  fileRead(fileName) {
+    if (this.setupError) {
+      console.log(`fileRead: Cannot Read, Setup Error`);
       return;
     }
 
@@ -80,120 +92,149 @@ class OBlog {
     let data = "";
 
     try {
-      // Check to see if the file exists
-      if ( fs.existsSync(readPath) == false ){
-        console.log(`filReadFile: file does not exist: ${fileName}`);
+      if (!fs.existsSync(readPath)) {
+        console.log(`fileRead: file does not exist: ${fileName}`);
         return;
       }
-      // Read the file
       data = fs.readFileSync(readPath, 'utf8');
-    }catch(err){
-      console.error(`filReadFile: failed to call readFileSyn:`, err);
+    } catch (err) {
+      console.error(`fileRead: failed to read file:`, err);
     }
 
     return data;
   }
 
-  async createBlogTable(){
-    const sqlCreateTable = `CREATE TABLE blog 
-                            ( 
-                              id uuid PRIMARY KEY DEFAULT uuid_generate_v4(), 
-                              user text, 
-                              title text, 
-                              content text, 
-                              attachment text, 
-                              background text,
-                              created timestamp with time zone NOT NULL DEFAULT (current_timestamp AT TIME ZONE 'UTC')
-                            );`;
-    
-    client.query(sqlCreateTable, (err, res) => {
-      if (err) { 
-        console.error(err); 
-      } else { 
-        console.log('createBlogTable: \'blog\' table was created successfully'); 
-      } 
-    });
+  async createBlogTable() {
+    const sqlCreateTable = `
+      CREATE TABLE IF NOT EXISTS blog (
+        id SERIAL PRIMARY KEY,
+        username text,
+        userid text,
+        title text,
+        content text,
+        backstyle integer,
+        backcolor text,
+        attachments text[],
+        created timestamp with time zone NOT NULL DEFAULT (current_timestamp AT TIME ZONE 'UTC')
+      );
+    `;
+
+    try {
+      // connect to the database
+      await client.connect();
+
+      // Ensure the "blog" table is created and exists
+      const res = await client.query(sqlCreateTable);
+      console.log('createBlogTable: \'blog\' table was created successfully');
+    } catch (err) {
+      console.error('createBlogTable: error creating table:', err);
+      this.setupError = true;
+    }
   }
 
+  async addBlog(userData, blogData) {
+    if (this.setupError) {
+      console.log(`addBlog: Cannot Add Blog, Setup Error`);
+      return;
+    }
 
-  // get list of userIDs to get blogs
-  getBloggers(){
+    const username = userData.username;
+    const userid = serverObfuscateData(userData.userid);
 
-  }
+    const title = blogData.title;
+    const content = blogData.content;
+    const backStyle = Number(blogData.backstyle);
+    const backColor = blogData.backcolor;
 
-  // get list of blogs for userID
-  getUserBlogs(userID){
-
-  }
-
-  // get blog for userID
-  getBlog(userID, blogID){
-
-  }
-
-  getBlogTextualData(userID, blogID){
-
-  }
-
-  getBlogAttachments(userID, blogID){
-
-  }
-
-  // add new blog for userID with blogData
-  async addBlog(userID, blogData){
-    const blogTitle = blogData["title"]; // text
-    const blogContent = blogData["content"]; // text
-    const blogAttachment = blogData["attachment"]; // array
-    const blogBackground = blogData["background"];
-
-    const uuidFileName = this.generateUuidForFile(blogAttachment.originalFilename);
-
-    const queryInsert = "INSERT INTO blog (user, title, content, attachment, background) VALUES(%1,%2,%3,%4,%5);"
-    const queryValues = [userID, blogTitle, blogContent, uuidFileName, blogBackground];
-
-    console.log(userID);
-    console.log(blogData);
-    console.log(queryInsert);
-    console.log(queryValues);
-    return;
+    const queryInsert = `
+      INSERT INTO blog (username, userid, title, content, backstyle, backcolor)
+      VALUES ($1, $2, $3, $4, $5, $6)
+    `;
+    const queryValues = [username, userid, title, content, backStyle, backColor];
 
     try {
       const result = await client.query(queryInsert, queryValues);
       console.log('addBlog: row inserted successfully:', result);
-    } catch(err) {
+    } catch (err) {
       console.error('addBlog: error when inserting row:', err);
     }
-
   }
 
-  // del[ete] blog for userID using blogID
-  delBlog(userID, blogID){
-      // also delete any files on the samba share for that blog
+  async getBlogUsers(){
+    if (this.setupError) {
+      console.log(`getBlogUsers: cannot get any blog entry there is a setup error`);
+      return;
+    }
 
+    const querySelectBlog = `SELECT userid, username FROM blog WHERE userid IN (SELECT DISTINCT userid FROM blog)`;
+    let result = [];
+
+    try {
+      result = await client.query(querySelectBlog);
+    } catch (err) {
+      console.error('getBlogUsers: error when querying for userID and blogID:', err);
+    }
+
+    return result;
   }
 
-  // generate thumbnails to be store in the db itself
-  generateThumbnail(file){
+  async getBlogUserEntries(){
+    if (this.setupError) {
+      console.log(`getBlogUserEntries: cannot get any blog entry there is a setup error`);
+      return;
+    }
 
+    const querySelectBlog = `SELECT * FROM blog WHERE userid=$1`;
+    const queryValues = [serverObfuscateData(userID)];
+    let result = [];
+
+    try {
+      result = await client.query(querySelectBlog, queryValues);
+    } catch (err) {
+      console.error('getBlogUserEntries: error when querying for userID and blogID:', err);
+    }
+
+    return result;
   }
 
-  // no larger than 512x512
-  generateThumbnailFromImage(file){
+  async getBlog(blogID){
+    if (this.setupError) {
+      console.log(`getBlog: cannot get any blog entry there is a setup error`);
+      return;
+    }
 
+    const querySelectBlog = `SELECT * FROM blog WHERE id=$1`;
+    const queryValues = [blogID];
+    let result = [];
+    try {
+      const res = await client.query(querySelectBlog, queryValues);
+      if ( res.rows.length > 0 ){
+        result = res.rows[0];
+        //console.log(result);
+      }
+    } catch (err) {
+      console.error('getBlog: error when querying for userID and blogID:', err);
+    }
+
+    return result;
   }
 
-  // get a frame at some time in to video where not black, no larger than 512,512
-  generateThumbnailFromVideo(file){
-
+  // del blog based upon the userID (email address) and the blogID (unique primary key)
+  delBlog(userID, blogID) {
+    if (this.setupError) {
+      console.log(`delBlog: cannot get any blog entry there is a setup error`);
+      return;
+    }
+    // Implement deletion logic here
   }
 
-  // use a image list file or similar to get an icon that matches the extension of the file
-  generateThumbnailFromFileType(file){
+  generateUuidForFile(fileName) {
+    if (this.setupError) {
+      console.log(`generateUuidForFile: cannot get any blog entry there is a setup error`);
+      return;
+    }
 
-  }
-
-  generateUuidForFile(fileName){
-    if ( fileName === undefined ){
+    if (fileName === undefined) {
       return "error";
     }
     const fileExt = path.extname(fileName);
@@ -202,7 +243,6 @@ class OBlog {
 
     return uuidFileName;
   }
-
-};
+}
 
 module.exports = OBlog;

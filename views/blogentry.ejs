@@ -3,9 +3,17 @@
   <head>
     <%- include('./partials/head.ejs') %>
     <%- include('./partials/head-scripts.ejs') %>
-    <!-- Include stylesheet -->
-    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+     <!-- Include stylesheet -->
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+    <!-- Include your favorite highlight.js stylesheet -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet">
     <style>
+      .border-top-start-end-2 {
+        border-top: 3px solid #007bff!important; /* Top border: 5px thick, solid black */
+        border-left: 3px solid #007bff!important; /* Left border: 5px thick, solid black */
+        border-right: 3px solid #007bff!important; /* Right border: 5px thick, solid black */
+      }
       body {
         background-color: #f5efe6;
       }
@@ -36,39 +44,77 @@
         </div>
         <div class="form-group pb-3">
           <label for="content" class="fs-5 fw-bold text-dkgray text-shadow-black">Blog Entry</label>
-          <div id="editor" class="border border-2 border-primary bg-white-transparent-50" style="height: 300px;"></div>
-        </div>
-        <div class="form-group">
-          <label for="fileUpload">Upload File</label>
-          <input type="file" class="form-control-file" id="fileUpload" accept="image/*,video/*,.pdf">
+          <!-- <div id="editor" class="border border-2 border-primary bg-white-transparent-50" style="height: 300px;"></div> -->
+          <div id="toolbar-container" class="border-top-start-end-2 rounded bg-white-transparent-50">
+            <span class="ql-formats">
+              <select class="ql-font"></select>
+              <select class="ql-size"></select>
+            </span>
+            <span class="ql-formats">
+              <button class="ql-bold"></button>
+              <button class="ql-italic"></button>
+              <button class="ql-underline"></button>
+              <button class="ql-strike"></button>
+            </span>
+            <span class="ql-formats">
+              <select class="ql-color"></select>
+              <select class="ql-background"></select>
+            </span>
+            <span class="ql-formats">
+              <button class="ql-script" value="sub"></button>
+              <button class="ql-script" value="super"></button>
+            </span>
+            <span class="ql-formats">
+              <button class="ql-list" value="ordered"></button>
+              <button class="ql-list" value="bullet"></button>
+              <button class="ql-indent" value="-1"></button>
+              <button class="ql-indent" value="+1"></button>
+            </span>
+            <span class="ql-formats">
+              <button class="ql-direction" value="rtl"></button>
+              <select class="ql-align"></select>
+            </span>
+            <span class="ql-formats">
+              <button class="ql-link"></button>
+            </span>
+          </div>
+          <div id="editor" class="border border-3 border-primary rounded bg-white-transparent-50" style="height: 300px;"></div>
         </div>
         <button type="submit" class="btn btn-primary">Submit</button>
       </form>
     </div>
 
     <%- include('./partials/body-script.ejs') %>
+    <!-- Include the highlight.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>    
     <!-- Include the Quill library -->
-    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
     <script>
       // Initialize Quill editor
-      var quill = new Quill('#editor', {placeholder: 'Blog Entry', theme: 'snow'});
+      var quill = new Quill('#editor', 
+      { 
+        modules: 
+        {
+          syntax: true,
+          toolbar: '#toolbar-container'
+        },
+        placeholder: 'Blog Entry',
+        theme: 'snow'
+      });
 
       // Handle form submission
       document.getElementById('blogForm').addEventListener('submit', function(event) {
         event.preventDefault();
         var title = document.getElementById('title').value;
         var content = quill.root.innerHTML;
-        var fileInput = document.getElementById('fileUpload');
-        var attachment = fileInput.files[0];
         var formData = new FormData();
         formData.append('title', title);
         formData.append('content', content);
-        formData.append('attachment', attachment);
-        formData.append('background', '0');
+        formData.append('backstyle', '0');
+        formData.append('backcolor', 'none');
 
-        console.log(`formData being submitted:`);
-        console.log(formData);
-        
+        //console.log(`formData being submitted:`);
+        //console.log(formData);
 
         jQuery.ajax({
           url: `/blog/entry/:${g_submitBlogId}`,
@@ -91,6 +137,7 @@
 
       const g_submitBlogId = "<%=blogId%>";
     </script>
+    <%- include('./partials/body-script.ejs') %>
     <%- include('./partials/footer.ejs') %>
   </body>
 </html>
