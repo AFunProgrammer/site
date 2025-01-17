@@ -28,7 +28,11 @@ class OBlog {
 
     this.setupError = false;
     this.createBlogTable();
-    this.filePathExists();
+    ///////////////////////////////////////////////////
+    // TBD: Add Attachments in the future
+    ///////////////////////////////////////////////////
+    
+    //this.filePathExists();
   }
 
   static getGlobalInstance() {
