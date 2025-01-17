@@ -142,6 +142,7 @@ class OBlog {
       return;
     }
 
+    let   recordId;
     const username = userData.username;
     const userid = serverObfuscateData(userData.userid);
 
@@ -153,15 +154,19 @@ class OBlog {
     const queryInsert = `
       INSERT INTO blog (username, userid, title, content, backstyle, backcolor)
       VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING id
     `;
     const queryValues = [username, userid, title, content, backStyle, backColor];
 
     try {
       const result = await client.query(queryInsert, queryValues);
       console.log('addBlog: row inserted successfully:', result);
+      recordId = result.rows[0].id;
     } catch (err) {
       console.error('addBlog: error when inserting row:', err);
     }
+
+    return recordId;
   }
 
   async getBlogUsers(){

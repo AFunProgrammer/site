@@ -126,7 +126,7 @@
           type: 'POST', // For jQuery < 1.9
           success: function(response, status, xhr){
             if (response.redirectUrl){
-              //window.location.href = response.redirectUrl;
+              window.location.href = response.redirectUrl;
             }
           },
           error: function(error) {
