@@ -663,7 +663,7 @@ app.post('/blog/entry/:blogID', async (req, res) => {
 
   const blogEntry = new formidable.IncomingForm();
 
-  blogEntry.parse(req, (err, fields, files) => {
+  blogEntry.parse(req, async (err, fields, files) => {
     if (err) {
       console.error(err);
       return res.status(500).send('Error Parsing Blog Entry');
@@ -673,10 +673,6 @@ app.post('/blog/entry/:blogID', async (req, res) => {
     //console.log('Files:', files);
     // Add a new blog entry in to the database
     try {
-      // Save the session information
-      //saveCreatedByInfo(req,[OptionsOnSavePath]);
-      redirectUrl = `/blog/entry/:${blogID}`
-
       let blogData = {
         title : fields.title[0],
         content : fields.content[0], // this is html formatted data with 'extra data'
@@ -689,7 +685,7 @@ app.post('/blog/entry/:blogID', async (req, res) => {
         userid:req.session.userId
       };
 
-      const addedBlogId = OBlog.getGlobalInstance().addBlog(userData, blogData);
+      const addedBlogId = await OBlog.getGlobalInstance().addBlog(userData, blogData);
       redirectUrl = `/blog/entry/:${addedBlogId}`;
     } catch (error) {
       console.error(`app.post('/blog/entry/:${blogID}`, error);
