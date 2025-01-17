@@ -669,25 +669,28 @@ app.post('/blog/entry/:blogID', async (req, res) => {
       return res.status(500).send('Error Parsing Blog Entry');
     }
 
-    console.log('Fields:', fields);
-    console.log('Files:', files);
-
+    //console.log('Fields:', fields);
+    //console.log('Files:', files);
     // Add a new blog entry in to the database
     try {
       // Save the session information
       //saveCreatedByInfo(req,[OptionsOnSavePath]);
       redirectUrl = `/blog/entry/:${blogID}`
 
-      console.log(req.body.toString());
-
-      let blogData = [];
-
-      blogData["title"] = fields.title;
-      blogData["content"] = fields.content;
-      blogData["attachment"] = files.attachment[0]; //only grab first attachment
-      blogData["background"] = fields.background;
+      let blogData = {
+        title : fields.title[0],
+        content : fields.content[0], // this is html formatted data with 'extra data'
+        backstyle : fields.backstyle[0],
+        backcolor : fields.backcolor[0]
+      };
       
-      OBlog.getGlobalInstance().addBlog(req.session.userId, blogData);
+      const userData = { 
+        username:req.session.userName, 
+        userid:req.session.userId
+      };
+
+      const addedBlogId = OBlog.getGlobalInstance().addBlog(userData, blogData);
+      redirectUrl = `/blog/entry/:${addedBlogId}`;
     } catch (error) {
       console.error(`app.post('/blog/entry/:${blogID}`, error);
       return res.status(500).send('Server error occurred while processing blog data');
@@ -700,20 +703,46 @@ app.post('/blog/entry/:blogID', async (req, res) => {
 
 //// Create or edit a blog entry
 app.get('/blog/entry/:blogId', async (req, res) => {
-  let useTitle = 'Create New Blog Entry';
+  let useTitle = '';
+  let useContent = '';
   const useBlogId = req.params.blogId.replace(':','');  // set the date to a string without the colon...  
   
-  if ( !req.session.authenticated ) {
-    return res.render('noaccess', {...setSignInInfo(req), title: 'You Must Be Logged In To Use This Feature' });
+  // if a "New" blog then go down the path of just entering a blog
+  if ( useBlogId == "New" ){
+    if ( !req.session.authenticated ) {
+      return res.render('noaccess', {...setSignInInfo(req), title: 'Need to sign-in', });
+    }
+  
+    useUserName = req.session.userName;
+
+    res.render('blogentry', {...setSignInInfo(req), title: 'Enter New Blog', blogUser: useUserName, blogId: useBlogId });
+    return;
   }
 
+
   try {
+    // watch in the future for multiple results
+    const result = await OBlog.getGlobalInstance().getBlog(useBlogId)
+
+    if (result.length == 0){
+      return res.status(404).render('404',{...setSignInInfo(req), 
+        title: 'BlogID Not Found',
+        notFoundMsg: `BlogID of "${useBlogId}" not found<br>Go back and check the /:BlogID` });
+    }
+
+    // if authenticated login, and is the current user blog then allow edit to be listed
+    if ( req.session.authenticated ) {
+      //enable edit
+    }
+
+    useUserName = result.username;
+    useTitle = result.title;
+    useContent = result.content;
+
+    res.render('blogview', {...setSignInInfo(req), title: 'Blog', blogTitle: useTitle, blogUserName: useUserName, blogContent: useContent });
   } catch(error) {
     console.error(error);
   }
-
-
-  res.render('blogentry', {...setSignInInfo(req), title: useTitle, blogUser: req.session.userName, blogId: useBlogId });
 });
 
 
@@ -1030,17 +1059,7 @@ function signedOut(req) {
 // anything that needs to run at startup
 ////////////////////////////////////////////////////
 OCategories.getCurrentGame();
+OBlog.getGlobalInstance();
 
 console.log('Global: Code Verifier:', codeVerifier);
 console.log('Global: Code Challenge:', codeChallenge);
-
-console.log('-----------------------------------------');
-console.log('Testing Blog Connectors:')
-let helloID = uuid.v4().toString();
-console.log(`embedding uuid: ${helloID} in HelloWorld.txt file`);
-OBlog.getGlobalInstance().filWriteFile('HelloWorld.txt',`Hello World UUID: ${helloID}`);
-let data = OBlog.getGlobalInstance().filReadFile('HelloWorld.txt');
-console.log(`data returned from reading file of HelloWorld.txt: ${data}`)
-console.log('End Testing Blog Connectors:')
-console.log('-----------------------------------------');
-
