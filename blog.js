@@ -136,7 +136,7 @@ class OBlog {
     }
   }
 
-  async addBlog(userData, blogData) {
+  async insertBlog(userData, blogData){
     if (this.setupError) {
       console.log(`addBlog: Cannot Add Blog, Setup Error`);
       return;
@@ -156,11 +156,11 @@ class OBlog {
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id
     `;
+
     const queryValues = [username, userid, title, content, backStyle, backColor];
 
     try {
       const result = await client.query(queryInsert, queryValues);
-      console.log('addBlog: row inserted successfully:', result);
       recordId = result.rows[0].id;
     } catch (err) {
       console.error('addBlog: error when inserting row:', err);
@@ -168,6 +168,63 @@ class OBlog {
 
     return recordId;
   }
+
+  async alterBlog(blogData) {
+    if (this.setupError) {
+      console.log(`alterBlog: Cannot Add Blog, Setup Error`);
+      return;
+    }
+
+    const blogId = blogData.id;
+    const title = blogData.title;
+    const content = blogData.content;
+    const backStyle = Number(blogData.backstyle);
+    const backColor = blogData.backcolor;
+
+    const queryUpdate = `
+      UPDATE blog
+      SET title = $1, content = $2, backstyle = $3, backcolor = $4
+      WHERE id = $5
+    `;
+
+    const queryValues = [title, content, backStyle, backColor, blogId];
+
+    try {
+      const result = await client.query(queryUpdate, queryValues);
+    } catch (err) {
+      console.error('alterBlog: error when updating row:', err);
+    }
+
+    return blogId;
+  }
+
+  async updateBlog(userData, blogData){
+    if (this.setupError) {
+      console.log(`updateBlog: Cannot Add Blog, Setup Error`);
+      return;
+    }
+    
+    let blogId = 'New';
+
+    if ( blogData && blogData.id && blogData.id != 'New' ){
+      // verify that the userData matches the entered blog
+      const queryUpdate = `SELECT * FROM blog WHERE id = $1 AND username = $2 AND userid = $3`;
+
+      const queryValues = [blogData.id, userData.username, serverObfuscateData(userData.userid)];
+      const result = await client.query(queryUpdate, queryValues);
+
+      // alter the existing blog
+      if ( result.rowCount > 0 ){
+        blogId = this.alterBlog(blogData);
+      }
+    } else {
+      // insert a new blog entry
+      blogId = this.insertBlog(userData,blogData);
+    }
+    
+    return blogId; // return Id for redirect
+  }
+
 
   async getBlogUsers(){
     if (this.setupError) {
@@ -187,13 +244,13 @@ class OBlog {
     return result;
   }
 
-  async getBlogUserEntries(){
+  async getBlogUserEntries(userID){
     if (this.setupError) {
       console.log(`getBlogUserEntries: cannot get any blog entry there is a setup error`);
       return;
     }
 
-    const querySelectBlog = `SELECT * FROM blog WHERE userid=$1`;
+    const querySelectBlog = `SELECT * FROM blog WHERE created=$1 ORDER BY created LIMIT 200`;
     const queryValues = [serverObfuscateData(userID)];
     let result = [];
 
@@ -223,6 +280,25 @@ class OBlog {
       }
     } catch (err) {
       console.error('getBlog: error when querying for userID and blogID:', err);
+    }
+
+    return result;
+  }
+
+  async getMostRecentBlogs(){
+    if (this.setupError) {
+      console.log(`getMostRecentBlogs: cannot get any blog there is a setup error`);
+      return;
+    }
+    const querySelectBlog = `SELECT * FROM blog ORDER BY created DESC LIMIT 200`;
+    let result = [];
+    try {
+      const res = await client.query(querySelectBlog);
+      if ( res.rows.length > 0 ){
+        result = res.rows;
+      }
+    } catch (err) {
+      console.error('getMostRecentBlogs: error when querying for blogs:', err);
     }
 
     return result;

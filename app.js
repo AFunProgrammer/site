@@ -11,7 +11,6 @@ const url = require('url');
 // express
 const express = require('express');
 const session = require('express-session');
-const store = new session.MemoryStore();
 
 // form control
 const bodyParser = require('body-parser');
@@ -19,7 +18,7 @@ const formidable = require('formidable');
 const multer = require('multer');
 
 // private functions
-const { serverEncrypt, serverDecrypt } = require('./private/code/crypto_utils.js');
+const { serverEncrypt, serverDecrypt, serverObfuscateData } = require('./private/code/crypto_utils.js');
 
 // oauth
 const { google } = require('googleapis');
@@ -54,7 +53,7 @@ var sessionOptions = {
   resave: false,
   saveUninitialized: true,
   secret: settings.secrets.session,
-  store
+  store: new session.MemoryStore()
 };
 
 const codeVerifier = uuid.v1() + crypto.randomBytes(32).toString('hex');
@@ -647,13 +646,47 @@ app.get('/categories/game/:gameID', async (req, res) => {
 
 
 ////////////////////////////////////////////////////////////////
-// Daily Scripture
-//  inspiring scripture to lift the heart and mind and any
-//  links or other useful things to help change to joy
+// Blogs
+//  adding blogs to the blogosphere with family focus
+//
 ////////////////////////////////////////////////////////////////
 
-//// Post a new daily scripture blog entry
-app.post('/blog/entry/:blogID', async (req, res) => {
+/// Get a list of blogs, send the most recent ones to the page
+app.get('/blogs', async (req, res) => {
+  let queryResult = undefined;
+  let blogList = [];
+
+  try {
+    // watch in the future for multiple results
+    queryResult = await OBlog.getGlobalInstance().getMostRecentBlogs();
+  } catch(error) {
+    console.error(error);
+  }
+
+  if (queryResult.length == 0){
+    return res.status(404).render('404',{...setSignInInfo(req), 
+      title: 'No Blogs Found',
+      notFoundMsg: `There are no Blogs to be displayed` });
+  }
+
+  // setup blog data for edit / new
+  for( row of queryResult ){
+    let blog = { 
+      viewurl: `/blogs/view/:${row.id}`,
+      title: row.title,
+      username: row.username
+    };
+
+    blogList.push(blog); // add specific blog data to be listed
+  }
+
+  res.render('bloglist', {...setSignInInfo(req), title: 'Recent Blogs', blogList: blogList });
+});
+
+
+
+//// Post a new BLOG Entry to the database and redirect
+app.post('/blogs/edit/:blogID', async (req, res) => {
   const blogID = req.params.blogID.replace(':','');  // set the date to a string without the colon...  
   let redirectUrl = "/";
   
@@ -674,6 +707,7 @@ app.post('/blog/entry/:blogID', async (req, res) => {
     // Add a new blog entry in to the database
     try {
       let blogData = {
+        id : blogID, // Use this to determine if new or update
         title : fields.title[0],
         content : fields.content[0], // this is html formatted data with 'extra data'
         backstyle : fields.backstyle[0],
@@ -685,10 +719,10 @@ app.post('/blog/entry/:blogID', async (req, res) => {
         userid:req.session.userId
       };
 
-      const addedBlogId = await OBlog.getGlobalInstance().addBlog(userData, blogData);
-      redirectUrl = `/blog/entry/:${addedBlogId}`;
+      const addedBlogId = await OBlog.getGlobalInstance().updateBlog(userData, blogData);
+      redirectUrl = `/blogs/view/:${addedBlogId}`;
     } catch (error) {
-      console.error(`app.post('/blog/entry/:${blogID}`, error);
+      console.error(`app.post('/blogs/edit/:${blogID}`, error);
       return res.status(500).send('Server error occurred while processing blog data');
     }
 
@@ -698,47 +732,103 @@ app.post('/blog/entry/:blogID', async (req, res) => {
 });
 
 //// Create or edit a blog entry
-app.get('/blog/entry/:blogId', async (req, res) => {
-  let useTitle = '';
-  let useContent = '';
-  const useBlogId = req.params.blogId.replace(':','');  // set the date to a string without the colon...  
-  
-  // if a "New" blog then go down the path of just entering a blog
-  if ( useBlogId == "New" ){
-    if ( !req.session.authenticated ) {
-      return res.render('noaccess', {...setSignInInfo(req), title: 'Need to sign-in', });
-    }
-  
-    useUserName = req.session.userName;
+app.get('/blogs/edit/:blogId', async (req, res) => {
+  let useTitle = 'Enter New Blog';
+  let useBlogData = {};
+  let useBlogId = req.params.blogId.replace(':','');  // set the date to a string without the colon...  
+  let queryResult = undefined;
 
-    res.render('blogentry', {...setSignInInfo(req), title: 'Enter New Blog', blogUser: useUserName, blogId: useBlogId });
-    return;
+  // if a "New" blog then go down the path of just entering a blog
+  if ( !req.session.authenticated ) {
+    return res.render('noaccess', {...setSignInInfo(req), title: 'Need to sign-in', });
   }
 
+  // setup blog data for edit / new 
+  useBlogData.id = "New";
+  useBlogData.title = "";
+  useBlogData.content = "";
+  useBlogData.username = req.session.userName;
+  useBlogData.backStyle = 0;
+  useBlogData.backColor = "";
+
+  // Check to see if a specific blogId was entered
+  if ( useBlogId != "" && isNumeric(useBlogId) ) {
+    // BlogID entered, does it exist, and is the user authenticated to edit it
+    try {
+      // watch in the future for multiple results
+      queryResult = await OBlog.getGlobalInstance().getBlog(useBlogId);
+    } catch(error) {
+      console.error(error);
+    }
+
+    // if authenticated login, and is the current user blog edit otherwise make 'New' blog
+    if ( queryResult && ( queryResult.userid == serverObfuscateData(req.session.userId) ) ){ 
+      useTitle = `Edit Blog ${useBlogId}`;
+
+      useBlogData.id = queryResult.id;
+      useBlogData.title = queryResult.title;
+      useBlogData.content = queryResult.content;
+      useBlogData.username = req.session.userName;
+      useBlogData.backStyle = queryResult.backStyle;
+      useBlogData.backColor = queryResult.backColor;
+    } else {
+      useBlogId = 'New';
+    }
+  } else {
+    useBlogId = 'New'; //set to new entry because misconfigured
+  }
+  
+  res.render('blogentry', {...setSignInInfo(req), title: useTitle, blogData: useBlogData });
+  return;
+});
+
+/// View a blog
+app.get('/blogs/view/:blogId', async (req, res) => {
+  let useBlogId = req.params.blogId.replace(':','');  // set the date to a string without the colon...  
+  let useBlogData = {};
+  let queryResult = undefined;
 
   try {
     // watch in the future for multiple results
-    const result = await OBlog.getGlobalInstance().getBlog(useBlogId)
-
-    if (result.length == 0){
-      return res.status(404).render('404',{...setSignInInfo(req), 
-        title: 'BlogID Not Found',
-        notFoundMsg: `BlogID of "${useBlogId}" not found<br>Go back and check the /:BlogID` });
-    }
-
-    // if authenticated login, and is the current user blog then allow edit to be listed
-    if ( req.session.authenticated ) {
-      //enable edit
-    }
-
-    useUserName = result.username;
-    useTitle = result.title;
-    useContent = result.content;
-
-    res.render('blogview', {...setSignInInfo(req), title: 'Blog', blogTitle: useTitle, blogUserName: useUserName, blogContent: useContent });
+    queryResult = await OBlog.getGlobalInstance().getBlog(useBlogId);
   } catch(error) {
     console.error(error);
   }
+
+  if (queryResult.length == 0){
+    return res.status(404).render('404',{...setSignInInfo(req), 
+      title: 'BlogID Not Found',
+      notFoundMsg: `BlogID of "${useBlogId}" not found<br>Go back and check the /:BlogID` });
+  }
+
+  // setup blog data for edit / new 
+  useBlogData.id = useBlogId;
+  useBlogData.title = queryResult.title;
+  useBlogData.content = queryResult.content;
+  useBlogData.username = queryResult.username;
+  useBlogData.backStyle = queryResult.backStyle;
+  useBlogData.backColor = queryResult.backColor;
+
+  let editHide = 'd-none';
+  let editUrl = '';
+
+  // if authenticated login, and is the current user blog then allow edit to be listed
+  if ( req.session.authenticated ) {
+    if ( (queryResult.userid == serverObfuscateData(req.session.userId)) &&
+         (queryResult.username == req.session.userName) ){
+      //enable edit
+      editHide = "";
+      editUrl = `/blogs/edit/:${useBlogId}`;
+    }
+  }
+
+  res.render('blogview', 
+    {...setSignInInfo(req),
+      title: useBlogData.title,
+      blogData: useBlogData,
+      blogEditHide: editHide,
+      blogEditUrl: editUrl
+  });
 });
 
 
@@ -905,6 +995,12 @@ app.use((req, res) => {
 // Processing of the Path Data for the URLS
 //
 ////////////////////////////////////////////////////////////////////////
+function isNumeric(str) {
+  if (typeof str != "string") return false // we only process strings!  
+  return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+         !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
+}
+
 
 /**
  * @param req express http request
