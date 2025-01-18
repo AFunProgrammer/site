@@ -661,6 +661,9 @@ app.get('/blogs', async (req, res) => {
     queryResult = await OBlog.getGlobalInstance().getMostRecentBlogs();
   } catch(error) {
     console.error(error);
+    return res.status(500).render('404',{...setSignInInfo(req), 
+      title: 'No Blogs Found',
+      notFoundMsg: `Server Error trying to retrieve blogs` });
   }
 
   if (queryResult.length == 0){
