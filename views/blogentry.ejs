@@ -36,11 +36,11 @@
   <body>
     <%- include('./partials/nav.ejs') %>
     <div class="container align-content-center justify-content-center mt-5" style="max-width: 1000px;">
-      <div class="fs-2 fw-bold text-center text-black text-shadow-black">Creating A New Blog Entry: <%=blogUser%></div>
+      <div class="fs-2 fw-bold text-center text-black text-shadow-black">Creating A New Blog Entry: <%=blogData.username%></div>
       <form id="blogForm">
         <div class="form-group pb-3">
           <label for="title" class="fs-5 fw-bold text-dkgray text-shadow-black">Blog Title</label>
-          <input type="text" class="form-control border border-2 border-primary bg-white-transparent-50" id="title" placeholder="Enter title">
+          <input type="text" class="form-control border border-2 border-primary bg-white-transparent-50" maxlength="40" id="title" placeholder="Enter title">
         </div>
         <div class="form-group pb-3">
           <label for="content" class="fs-5 fw-bold text-dkgray text-shadow-black">Blog Entry</label>
@@ -90,6 +90,15 @@
     <!-- Include the Quill library -->
     <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
     <script>
+      const g_blogData = <%-JSON.stringify(blogData)%>;
+      const g_blogContent = "<%=blogData.content%>";
+
+      function decodeHtml(html) {
+        var txt = document.createElement("textarea");
+        txt.innerHTML = html;
+        return txt.value;
+      }
+
       // Initialize Quill editor
       var quill = new Quill('#editor', 
       { 
@@ -117,7 +126,7 @@
         //console.log(formData);
 
         jQuery.ajax({
-          url: `/blog/entry/:${g_submitBlogId}`,
+          url: `/blogs/edit/:${g_blogData.id}`,
           data: formData,
           cache: false,
           contentType: false,
@@ -132,10 +141,15 @@
           error: function(error) {
             console.error('Blog Entry: error in submission:', error);
           }
-        });
-      });
+        }); //end of ajax submit
+      }); //end of addEventListener
 
-      const g_submitBlogId = "<%=blogId%>";
+      // Check to see if a 'New' entry or to edit an existing set of data
+      if ( g_blogData.id != 'New' ){
+        const editTitle = document.getElementById('title');
+        editTitle.value = g_blogData.title;
+        quill.clipboard.dangerouslyPasteHTML(decodeHtml(g_blogContent));
+      }
     </script>
     <%- include('./partials/body-script.ejs') %>
     <%- include('./partials/footer.ejs') %>
