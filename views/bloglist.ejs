@@ -15,10 +15,10 @@
       </div>
       <div class="d-flex justify-content-center">
         <ul class="list-group mx-auto justify-content-center">
-          <%gameData.forEach(function(entry, i, arr){-%>
+          <%blogList.forEach(function(blog, i, arr){-%>
           <li class="border-bottom border-primary border-1">
-            <a class="fs-4 text-shadow-black no-href-decoration" href="<%=entry['blogUrl']%>"><%=entry['blogUser']%></a><span class="tab-space"></span>
-            <a class="fs-5 text-shadow-blue no-underline" href="<%=entry['blogUrl']%>">Read</a><span class="tab-space"></span>
+            <a class="fs-3 text-shadow-black no-href-decoration" href="<%=blog.viewurl%>"><%=blog.title%></a><span class="tab-space"></span>
+            <a class="fs-5 text-shadow-blue no-underline" href="<%=blog.viewurl%>"> - <%=blog.username%></a><span class="tab-space"></span>
           </li>
           <%});-%>
         </ul>
