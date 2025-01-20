@@ -42,7 +42,7 @@ const settings = require('./private/settings/private.json');
 // DEV - LocalHost
 const envFile = require('./private/settings/local.json');
 // PROD - WebSite
-//const envFile = require('./private/settings/website.json');
+// const envFile = require('./private/settings/website.json');
 
 var sessionOptions = {
   cookie: {
@@ -688,6 +688,35 @@ app.get('/blogs', async (req, res) => {
 
 
 
+//// Post request to delete a blog (read somewhere that PUT / DELETE aren't always supported)
+app.delete('/blogs/edit/:blogID', async (req, res) => {
+  const useBlogId = req.params.blogID.replace(':','');  // set the date to a string without the colon...  
+  let redirectUrl = "/blogs";
+  let queryResult = {};
+
+  if ( useBlogId === undefined || !isNumeric(useBlogId) || !req.session.authenticated ){
+    return;
+  }
+
+  // BlogID entered, does it exist, and is the user authenticated to edit it
+  try {
+    // watch in the future for multiple results
+    queryResult = await OBlog.getGlobalInstance().getBlog(useBlogId);
+  } catch(error) {
+    console.error(error);
+    return res.status(500).json({redirectUrl});
+  }
+  // if authenticated login, and is the current user blog edit otherwise make 'New' blog
+  if ( queryResult  && queryResult.userid && ( queryResult.userid == serverObfuscateData(req.session.userId) ) ){
+    const userData = {userId: req.session.userId, userName: req.session.userName};
+    OBlog.getGlobalInstance().deleteBlog(userData, useBlogId);
+  } else {
+    return res.status(500).json({redirectUrl});
+  }
+
+  res.status(201).json({ redirectUrl });
+});
+
 //// Post a new BLOG Entry to the database and redirect
 app.post('/blogs/edit/:blogID', async (req, res) => {
   const blogID = req.params.blogID.replace(':','');  // set the date to a string without the colon...  
@@ -812,7 +841,7 @@ app.get('/blogs/view/:blogId', async (req, res) => {
   useBlogData.backStyle = queryResult.backStyle;
   useBlogData.backColor = queryResult.backColor;
 
-  let editHide = 'd-none';
+  let ownerShow = 'd-none';
   let editUrl = '';
 
   // if authenticated login, and is the current user blog then allow edit to be listed
@@ -820,7 +849,7 @@ app.get('/blogs/view/:blogId', async (req, res) => {
     if ( (queryResult.userid == serverObfuscateData(req.session.userId)) &&
          (queryResult.username == req.session.userName) ){
       //enable edit
-      editHide = "";
+      ownerShow = "";
       editUrl = `/blogs/edit/:${useBlogId}`;
     }
   }
@@ -829,8 +858,8 @@ app.get('/blogs/view/:blogId', async (req, res) => {
     {...setSignInInfo(req),
       title: useBlogData.title,
       blogData: useBlogData,
-      blogEditHide: editHide,
-      blogEditUrl: editUrl
+      blogOwnerShow: ownerShow,
+      blogEditUrl: editUrl,
   });
 });
 
