@@ -154,7 +154,7 @@ class OBlog {
     const queryInsert = `
       INSERT INTO blog (username, userid, title, content, backstyle, backcolor)
       VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id
+      RETURNING id;
     `;
 
     const queryValues = [username, userid, title, content, backStyle, backColor];
@@ -184,7 +184,7 @@ class OBlog {
     const queryUpdate = `
       UPDATE blog
       SET title = $1, content = $2, backstyle = $3, backcolor = $4
-      WHERE id = $5
+      WHERE id = $5;
     `;
 
     const queryValues = [title, content, backStyle, backColor, blogId];
@@ -208,7 +208,7 @@ class OBlog {
 
     if ( blogData && blogData.id && blogData.id != 'New' ){
       // verify that the userData matches the entered blog
-      const queryUpdate = `SELECT * FROM blog WHERE id = $1 AND username = $2 AND userid = $3`;
+      const queryUpdate = `SELECT * FROM blog WHERE id = $1 AND username = $2 AND userid = $3;`;
 
       const queryValues = [blogData.id, userData.username, serverObfuscateData(userData.userid)];
       const result = await client.query(queryUpdate, queryValues);
@@ -232,7 +232,7 @@ class OBlog {
       return;
     }
 
-    const querySelectBlog = `SELECT userid, username FROM blog WHERE userid IN (SELECT DISTINCT userid FROM blog)`;
+    const querySelectBlog = `SELECT userid, username FROM blog WHERE userid IN (SELECT DISTINCT userid FROM blog);`;
     let result = [];
 
     try {
@@ -250,7 +250,7 @@ class OBlog {
       return;
     }
 
-    const querySelectBlog = `SELECT * FROM blog WHERE created=$1 ORDER BY created LIMIT 200`;
+    const querySelectBlog = `SELECT * FROM blog WHERE created=$1 ORDER BY created LIMIT 200;`;
     const queryValues = [serverObfuscateData(userID)];
     let result = [];
 
@@ -269,7 +269,7 @@ class OBlog {
       return;
     }
 
-    const querySelectBlog = `SELECT * FROM blog WHERE id=$1`;
+    const querySelectBlog = `SELECT * FROM blog WHERE id=$1;`;
     const queryValues = [blogID];
     let result = [];
     try {
@@ -290,7 +290,7 @@ class OBlog {
       console.log(`getMostRecentBlogs: cannot get any blog there is a setup error`);
       return;
     }
-    const querySelectBlog = `SELECT * FROM blog ORDER BY created DESC LIMIT 200`;
+    const querySelectBlog = `SELECT * FROM blog ORDER BY created DESC LIMIT 200;`;
     let result = [];
     try {
       const res = await client.query(querySelectBlog);
@@ -304,13 +304,25 @@ class OBlog {
     return result;
   }
 
-  // del blog based upon the userID (email address) and the blogID (unique primary key)
-  delBlog(userID, blogID) {
+  // delete blog based upon the userID (email address) and the blogID (unique primary key)
+  async deleteBlog(userData, blogID) {
     if (this.setupError) {
       console.log(`delBlog: cannot get any blog entry there is a setup error`);
       return;
     }
+
     // Implement deletion logic here
+    const queryDeleteBlog = `DELETE FROM blog WHERE id=$1 AND userid=$2;`;
+    const queryValues = [blogID, serverObfuscateData(userData.userId)];
+    let result = [];
+
+    try {
+      result = await client.query(queryDeleteBlog, queryValues);
+    } catch (err) {
+      console.error('deleteBlog: error when deleting blog:', err);
+    }
+
+    return result;
   }
 
   generateUuidForFile(fileName) {

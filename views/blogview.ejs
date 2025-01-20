@@ -42,9 +42,12 @@
       <div class="row">
           <div class="text-center">by: <%=blogData.username %></div>
       </div>
-      <div class="row mx-auto <%=blogEditHide%>">
-        <div class="col mx-auto text-center <%=blogEditHide%>">
-          <button type="button" class="btn btn-primary <%=blogEditHide%>" onclick="editBlog()">Edit</button>
+      <div class="row mx-auto <%=blogOwnerShow%>">
+        <div class="col mx-auto text-end <%=blogOwnerShow%>">
+          <button type="button" class="btn btn-primary <%=blogOwnerShow%>" onclick="editBlog()">Edit</button>
+        </div>
+        <div class="col mx-auto text-start <%=blogOwnerShow%>">
+          <button type="button" class="btn btn-primary <%=blogOwnerShow%>" onclick="deleteBlog()">Delete</button>
         </div>
       </div>
       <div class="row">
@@ -62,6 +65,40 @@
         if ( blogEditUrl && blogEditUrl != "" ){
           window.location.href = blogEditUrl;
         }
+      }
+
+      function deleteBlog(){
+        if ( !blogEditUrl || blogEditUrl == "" ){
+          return
+        }
+
+        let result = confirm("Are you sure you want to delete this blog?");
+
+        if (!result) {
+          return;
+        }
+
+        $.ajax({
+          url: blogEditUrl,
+          type: 'DELETE', // HTTP DELETE method
+          success: function (response) {
+              if (response.redirectUrl) {
+                  // Redirect to the provided URL
+                  window.location.href = response.redirectUrl;
+              }
+          },
+          error: function (xhr, status, error) {
+            try {
+                const response = JSON.parse(xhr.responseText); // Attempt to parse JSON
+                if (response.redirectUrl) {
+                    // Redirect even on error
+                    window.location.href = response.redirectUrl;
+                } 
+            } catch (e) {
+                console.error('Error parsing error response:', e);
+            }
+          }
+        });
       }
 
       function decodeHtml(html) {
