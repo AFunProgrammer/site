@@ -695,7 +695,6 @@ app.post('/blogs/edit/:blogID', async (req, res) => {
 
     res.status(201).json({ redirectUrl });
   });
-
 });
 
 //// Create or edit a blog entry
@@ -736,16 +735,18 @@ app.get('/blogs/edit/:blogId', async (req, res) => {
       useBlogData.title = queryResult.title;
       useBlogData.content = queryResult.content;
       useBlogData.username = req.session.userName;
-      useBlogData.backStyle = queryResult.backStyle;
-      useBlogData.backColor = queryResult.backColor;
+      useBlogData.backStyle = queryResult.backstyle;
+      useBlogData.backColor = queryResult.backcolor;
     } else {
       useBlogId = 'New';
     }
   } else {
     useBlogId = 'New'; //set to new entry because misconfigured
   }
+
+  let useEditUrl = `/blogs/edit/:${useBlogData.id}`;
   
-  res.render('blogentry', {...setSignInInfo(req), title: useTitle, blogData: useBlogData });
+  res.render('blogentry', {...setSignInInfo(req), title: useTitle, editUrl: useEditUrl, blogData: useBlogData });
   return;
 });
 
@@ -773,8 +774,8 @@ app.get('/blogs/view/:blogId', async (req, res) => {
   useBlogData.title = queryResult.title;
   useBlogData.content = queryResult.content;
   useBlogData.username = queryResult.username;
-  useBlogData.backStyle = queryResult.backStyle;
-  useBlogData.backColor = queryResult.backColor;
+  useBlogData.backStyle = queryResult.backstyle;
+  useBlogData.backColor = queryResult.backcolor;
 
   let ownerShow = 'd-none';
   let editUrl = '';
@@ -799,54 +800,230 @@ app.get('/blogs/view/:blogId', async (req, res) => {
 });
 
 
-//// Create or edit daily scripture entry...
-app.get('/dailyscripture/entry/:date', async (req, res) => {
-  let useTitle = 'Create New Blog Entry';
-  let userName = 'Daily Scripture';
-  const date = req.params.date.replace(':','');  // set the date to a string without the colon...  
+//////////////////////////////////////////////////////////////
+// Daily Scripture -
+//  Usage of a 'focused' Blog on Christian Scripture
+//////////////////////////////////////////////////////////////
+
+//// Post request to delete a blog (read somewhere that PUT / DELETE aren't always supported)
+app.delete('/dailyscripture/edit/:date', async (req, res) => {
+  let useDate = req.params.date.replace(':','');  // set the date to a string without the colon...
+  let redirectUrl = "/dailyscripture/view/:Today";
+  let queryResult = {};
+
+  if ( useDate === undefined || isNaN(Date.parse(useDate)) || !req.session.authenticated ){
+    return;
+  }
+
+  // BlogID entered, does it exist, and is the user authenticated to edit it
+  try {
+    // watch in the future for multiple results
+    queryResult = await OBlog.getGlobalInstance('scripture').getBlogByTitle(useDate);
+  } catch(error) {
+    console.error(error);
+    return res.status(500).json({redirectUrl});
+  }
+  // if authenticated login, and is the current user blog edit otherwise make 'New' blog
+  if ( queryResult ){
+    for( result of queryResult ){
+      if ( result.userid && ( result.userid == serverObfuscateData(req.session.userId) ) ){
+        const userData = {userId: req.session.userId, userName: req.session.userName};
+        OBlog.getGlobalInstance('scripture').deleteBlog(userData, result.id);
+      } else {
+        return res.status(500).json({redirectUrl});
+      }
+    }
+  }
+
+  res.status(201).json({ redirectUrl });
+});
+
+//// Post a new BLOG Entry to the database and redirect
+app.post('/dailyscripture/edit/:date', async (req, res) => {
+  const addToMonth = (new Date('01-01-01').getMonth() == 0 ? 1 : 0); // Why in the heck use 0 based Month?
+  const useDate = req.params.date.replace(':','');  // set the date to a string without the colon...  
+  let useBlogId = 'New';
+  let useDateTitle = '';
+  let redirectUrl = "/dailyscripture/view/:Today";
   
-  if ( !req.session.authenticated || req.session.userId != settings.blog.user ) {
+  if ( req.body === undefined || !req.session.authenticated ){
+    return;
+  }
+
+  const blogEntry = new formidable.IncomingForm();
+
+  blogEntry.parse(req, async (err, fields, files) => {
+    if ( isNaN(Date.parse(`${fields.title[0]}`)) || err ) {
+      if ( isNaN(Date.parse(fields.title[0])) ){
+        console.error(`Invalid Date Detected: ${fields.title[0]} Output from Parse: ${Date.parse(fields.title[0]).toString()}`);
+      } else {
+        console.error(err);
+      }
+      return res.status(500).send('Error Parsing Daily Scripture Entry');
+    }
+
+    // Add a new blog entry in to the database
+    try {
+      let blogDate = new Date(Date.parse(fields.title[0])); //given date
+      let blogDateTitle = `${blogDate.getMonth()+addToMonth}-${blogDate.getDate()}-${blogDate.getFullYear()}`;
+      useDateTitle = blogDateTitle;
+
+      // Check to see if an entry exists for this date already
+      try {
+        // watch in the future for multiple results
+        let queryResult = await OBlog.getGlobalInstance('scripture').getBlogByTitle(useDate);
+        if ( queryResult && queryResult.length > 0 ){
+          useBlogId = queryResult[0].id;
+        }
+      } catch(error) {
+        console.error(error);
+      }
+
+      let blogData = {
+        id : useBlogId, // Use this to determine if new or update
+        title : blogDateTitle, //ensure this is correctly formatted
+        content : fields.content[0], // this is html formatted data with 'extra data'
+        backstyle : fields.backstyle[0],
+        backcolor : fields.backcolor[0]
+      };
+      
+      const userData = { 
+        username:req.session.userName, 
+        userid:req.session.userId
+      };
+
+      await OBlog.getGlobalInstance('scripture').updateBlog(userData, blogData);
+      redirectUrl = `/dailyscripture/view/:${useDateTitle}`;
+    } catch (error) {
+      console.error(`app.post('/dailyscripture/edit/:${useDateTitle}`, error);
+      return res.status(500).send('Server error occurred while processing daily scripture data');
+    }
+
+    res.status(201).json({ redirectUrl });
+  });
+});
+
+
+//// Create or edit daily scripture entry...
+app.get('/dailyscripture/edit/:date', async (req, res) => {
+  const addToMonth = (new Date('01-01-01').getMonth() == 0 ? 1 : 0); // Why in the heck use 0 based Month?
+  const dateToday = new Date(Date.now());
+  const useDateToday = `${dateToday.getMonth()+addToMonth}-${dateToday.getDate()}-${dateToday.getFullYear()}`;
+
+  let useTitle = 'Edit Daily Scripture';
+  let useDate = req.params.date.replace(':','');  // set the date to a string without the colon...
+  let useBlogData = {};
+  let queryResult = undefined;
+  
+  if ( !req.session.authenticated || req.session.userId != settings.scripture.email ) {
     return res.render('noaccess', {...setSignInInfo(req), title: 'Only The Site Administrator Is Allowed To Do This' });
   }
 
+  // check for doing today only
+  if ( useDate == "Today" || isNaN(Date.parse(useDate)) ){
+    useDate = useDateToday;
+  } else {
+    // parse the date to something useable
+    const dateGiven = new Date(Date.parse(useDate));
+    useDate = `${dateGiven.getMonth()+addToMonth}-${dateGiven.getDate()}-${dateGiven.getFullYear()}`;
+  }
+
+  // setup blog data for edit / new 
+  useBlogData.id = "New";
+  useBlogData.title = useDate;
+  useBlogData.content = "";
+  useBlogData.username = req.session.userName;
+  useBlogData.backStyle = 0;
+  useBlogData.backColor = "";
+
+  // Check to see if an entry exists for this date already
   try {
+    // watch in the future for multiple results
+    queryResult = await OBlog.getGlobalInstance('scripture').getBlogByTitle(useDate);
   } catch(error) {
     console.error(error);
   }
 
-  res.render('blogentry', {...setSignInInfo(req), title: useTitle, blogUser: userName });
+  // if authenticated login, and is the current user blog edit otherwise make 'New' blog
+  if ( queryResult && queryResult[0] ){ 
+    useTitle = `Edit Scripture For Date ${useDate}`;
+
+    useBlogData.id = queryResult[0].id;
+    useBlogData.title = queryResult[0].title;
+    useBlogData.content = queryResult[0].content;
+    useBlogData.username = req.session.userName;
+    useBlogData.backStyle = queryResult[0].backstyle;
+    useBlogData.backColor = queryResult[0].backcolor;
+  }
+
+  // remember that the blogs posted / deleted via the ID, use the date to find
+  let useEditUrl = `/dailyscripture/edit/:${useDate}`;
+
+  res.render('blogentry', {...setSignInInfo(req), title: useTitle, editUrl: useEditUrl, blogData: useBlogData });
 });
 
 //// View a daily scripture entry
-app.get('/dailyscripture/day/:date', async (req, res) => {
-  const date = req.params.date.replace(':',''); // set the date to a string without the colon...
-  let userId = settings.blog.user;
-  let blogId = date;
-  let blogExists = false;
-  
+app.get('/dailyscripture/view/:date', async (req, res) => {
+  const addToMonth = (new Date('01-01-01').getMonth() == 0 ? 1 : 0); // Why in the heck use 0 based Month?
+  const dateToday = new Date(Date.now());
+  const useDateToday = `${dateToday.getMonth()+addToMonth}-${dateToday.getDate()}-${dateToday.getFullYear()}`;
+
+  let useDate = req.params.date.replace(':','');  // set the date to a string without the colon...
+  let useBlogData = {};
+  let queryResult = undefined;
+
+  // check for doing today only
+  if ( useDate == "Today" || isNaN(Date.parse(useDate)) ){
+    useDate = useDateToday;
+  } else {
+    // parse the date to something useable
+    const dateGiven = new Date(Date.parse(useDate));
+    useDate = `${dateGiven.getMonth()+addToMonth}-${dateGiven.getDate()}-${dateGiven.getFullYear()}`;
+  }
+
+  // Check to see if an entry exists for this date
   try {
-    //blogExists = OBlogs.doesBlogExist(userId, blogId);
+    // watch in the future for multiple results
+    queryResult = await OBlog.getGlobalInstance('scripture').getBlogByTitle(useDate);
   } catch(error) {
     console.error(error);
   }
 
-  // verify the game exists, otherwise send a 404 [TBD but need to 
-  //  send a page saying gameID doesn't exist]
-  if ( blogExists == false ){
+  if (queryResult.length == 0){
     return res.status(404).render('404',{...setSignInInfo(req), 
-                                         title: 'Scripture Date Not Found',
-                                         notFoundMsg: `The Daily Scripture for "${date}" does not exist<br>Go back and check the /:date` });
+      title: 'Daily Scripture Entry Not Found',
+      notFoundMsg: `Date of "${useDate}" not found<br>Go back and check the /:Date` });
   }
 
-  try{
-    //let blogEntry = await OBlogs.getBlogEntry(userId, blogId);
-  } catch(error) {
-    console.error(error);
+  // setup blog data for edit / new 
+  useBlogData.id = queryResult[0].id;
+  useBlogData.title = queryResult[0].title;
+  useBlogData.content = queryResult[0].content;
+  useBlogData.username = queryResult[0].username;
+  useBlogData.backStyle = queryResult[0].backstyle;
+  useBlogData.backColor = queryResult[0].backcolor;
+
+  let useBlogId = useBlogData.id;
+  let ownerShow = 'd-none';
+  let editUrl = '';
+
+  // if authenticated login, and is the current user blog then allow edit to be listed
+  if ( req.session.authenticated ) {
+    if ( (queryResult[0].userid == serverObfuscateData(req.session.userId)) &&
+         (queryResult[0].username == req.session.userName) ){
+      //enable edit
+      ownerShow = "";
+      editUrl = `/dailyscripture/edit/:${useDate}`;
+    }
   }
 
-  // Send a success message after serving static files (optional)
-  // res.render('dailyscripture', {...setSignInInfo(req), title: `Categories Game ${gameID}`, madeBy: createdBy, gameDataURL: `/categories/gamedata/:${gameID}` });
-  return res.status(404).render('404',{...setSignInInfo(req), title: 'DSR Not Finished', notFoundMsg: 'This Is Not Yet Done'});
+  res.render('blogview', 
+    {...setSignInInfo(req),
+      title: useBlogData.title,
+      blogData: useBlogData,
+      blogOwnerShow: ownerShow,
+      blogEditUrl: editUrl,
+  });
 });
 
 
