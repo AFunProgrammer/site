@@ -11,23 +11,21 @@ const { serverObfuscateData } = require('./private/code/crypto_utils.js');
 // required connectivity modules
 const { Client } = require('pg');
 
-const client = new Client({
-  host: settings.blog.postgres.server,
-  port: settings.blog.postgres.port || 5432,
-  user: settings.blog.postgres.user,
-  password: settings.blog.postgres.password,
-  database: settings.blog.postgres.database
-});
-
 class OBlog {
-  static globalInstance;
+  static globalInstance = [];
 
-  constructor(postgresSettings, fileSettings) {
+  constructor(postgresSettings, fileSettings, blogTable) {
     this.sqlSettings = postgresSettings;
     this.filSettings = fileSettings;
 
     this.setupError = false;
-    this.createBlogTable();
+    this.createConnection();
+    this.createBlogTable(blogTable);
+
+
+    if ( this.setupError == false ){
+      this.tableName = blogTable; // sometimes this is left as undefined...
+    }
     ///////////////////////////////////////////////////
     // TBD: Add Attachments in the future
     ///////////////////////////////////////////////////
@@ -35,12 +33,13 @@ class OBlog {
     //this.filePathExists();
   }
 
-  static getGlobalInstance() {
-    if (OBlog.globalInstance === undefined) {
-      OBlog.globalInstance = new OBlog(settings.blog.postgres, settings.blog.files);
+  // default global instance called 'blog'
+  static getGlobalInstance(blogTable = 'blog') {
+    if (OBlog.globalInstance[blogTable] === undefined) {
+      OBlog.globalInstance[blogTable] = new OBlog(settings.blog.postgres, settings.blog.files, blogTable);
     }
 
-    return OBlog.globalInstance;
+    return OBlog.globalInstance[blogTable];
   }
 
   filePathExists() {
@@ -108,9 +107,29 @@ class OBlog {
     return data;
   }
 
-  async createBlogTable() {
-    const sqlCreateTable = `
-      CREATE TABLE IF NOT EXISTS blog (
+
+  async createConnection(){
+    try {
+      this.client = new Client({
+        host: settings.blog.postgres.server,
+        port: settings.blog.postgres.port || 5432,
+        user: settings.blog.postgres.user,
+        password: settings.blog.postgres.password,
+        database: settings.blog.postgres.database
+      });
+    } catch (err) {
+      console.error(`createConnection: error creating client connection:`, err);
+      this.setupError = true;
+    }
+  }
+
+  async createBlogTable(blogTable) {
+    if ( this.setupError ){
+      return; // nothing can be done if connection has failed
+    }
+
+    const createQuery = `
+      CREATE TABLE IF NOT EXISTS ${blogTable} (
         id SERIAL PRIMARY KEY,
         username text,
         userid text,
@@ -123,13 +142,16 @@ class OBlog {
       );
     `;
 
+    const queryValues = [];
+
     try {
       // connect to the database
-      await client.connect();
+      await this.client.connect();
 
       // Ensure the "blog" table is created and exists
-      const res = await client.query(sqlCreateTable);
-      console.log('createBlogTable: \'blog\' table was created successfully');
+      const res = await this.client.query(createQuery, queryValues);
+      this.tableName = blogTable;
+      console.log(`createBlogTable: \'${blogTable}\' table was created successfully`);
     } catch (err) {
       console.error('createBlogTable: error creating table:', err);
       this.setupError = true;
@@ -152,7 +174,7 @@ class OBlog {
     const backColor = blogData.backcolor;
 
     const queryInsert = `
-      INSERT INTO blog (username, userid, title, content, backstyle, backcolor)
+      INSERT INTO ${this.tableName} (username, userid, title, content, backstyle, backcolor)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id;
     `;
@@ -160,7 +182,7 @@ class OBlog {
     const queryValues = [username, userid, title, content, backStyle, backColor];
 
     try {
-      const result = await client.query(queryInsert, queryValues);
+      const result = await this.client.query(queryInsert, queryValues);
       recordId = result.rows[0].id;
     } catch (err) {
       console.error('addBlog: error when inserting row:', err);
@@ -171,7 +193,7 @@ class OBlog {
 
   async alterBlog(blogData) {
     if (this.setupError) {
-      console.log(`alterBlog: Cannot Add Blog, Setup Error`);
+      console.log(`alterBlog: Cannot Alter Blog, Setup Error`);
       return;
     }
 
@@ -182,7 +204,7 @@ class OBlog {
     const backColor = blogData.backcolor;
 
     const queryUpdate = `
-      UPDATE blog
+      UPDATE ${this.tableName}
       SET title = $1, content = $2, backstyle = $3, backcolor = $4
       WHERE id = $5;
     `;
@@ -190,7 +212,7 @@ class OBlog {
     const queryValues = [title, content, backStyle, backColor, blogId];
 
     try {
-      const result = await client.query(queryUpdate, queryValues);
+      const result = await this.client.query(queryUpdate, queryValues);
     } catch (err) {
       console.error('alterBlog: error when updating row:', err);
     }
@@ -208,11 +230,10 @@ class OBlog {
 
     if ( blogData && blogData.id && blogData.id != 'New' ){
       // verify that the userData matches the entered blog
-      const queryUpdate = `SELECT * FROM blog WHERE id = $1 AND username = $2 AND userid = $3;`;
-
+      const queryUpdate = `SELECT * FROM ${this.tableName} WHERE id = $1 AND username = $2 AND userid = $3;`;
       const queryValues = [blogData.id, userData.username, serverObfuscateData(userData.userid)];
-      const result = await client.query(queryUpdate, queryValues);
 
+      const result = await this.client.query(queryUpdate, queryValues);
       // alter the existing blog
       if ( result.rowCount > 0 ){
         blogId = this.alterBlog(blogData);
@@ -232,13 +253,17 @@ class OBlog {
       return;
     }
 
-    const querySelectBlog = `SELECT userid, username FROM blog WHERE userid IN (SELECT DISTINCT userid FROM blog);`;
+    const querySelectBlog = `SELECT userid, username 
+                             FROM ${this.tableName}
+                             WHERE userid 
+                             IN (SELECT DISTINCT userid FROM ${this.tableName});`;
+    const queryValues = [];
     let result = [];
 
     try {
-      result = await client.query(querySelectBlog);
+      result = await this.client.query(querySelectBlog, queryValues);
     } catch (err) {
-      console.error('getBlogUsers: error when querying for userID and blogID:', err);
+      console.error('getBlogUsers: error when querying for users:', err);
     }
 
     return result;
@@ -250,14 +275,14 @@ class OBlog {
       return;
     }
 
-    const querySelectBlog = `SELECT * FROM blog WHERE created=$1 ORDER BY created LIMIT 200;`;
+    const querySelectBlog = `SELECT * FROM ${this.tableName} WHERE userid=$1 ORDER BY created LIMIT 200;`;
     const queryValues = [serverObfuscateData(userID)];
     let result = [];
 
     try {
-      result = await client.query(querySelectBlog, queryValues);
+      result = await this.client.query(querySelectBlog, queryValues);
     } catch (err) {
-      console.error('getBlogUserEntries: error when querying for userID and blogID:', err);
+      console.error('getBlogUserEntries: error when querying for userID:', err);
     }
 
     return result;
@@ -269,17 +294,39 @@ class OBlog {
       return;
     }
 
-    const querySelectBlog = `SELECT * FROM blog WHERE id=$1;`;
+    const querySelectBlog = `SELECT * FROM ${this.tableName} WHERE id=$1;`;
     const queryValues = [blogID];
     let result = [];
     try {
-      const res = await client.query(querySelectBlog, queryValues);
+      const res = await this.client.query(querySelectBlog, queryValues);
       if ( res.rows.length > 0 ){
         result = res.rows[0];
         //console.log(result);
       }
     } catch (err) {
-      console.error('getBlog: error when querying for userID and blogID:', err);
+      console.error('getBlog: error when querying for blogID:', err);
+    }
+
+    return result;
+  }
+
+  async getBlogByTitle(blogTitle){
+    if (this.setupError) {
+      console.log(`getBlogByTitle: cannot get any blog entry there is a setup error`);
+      return;
+    }
+
+    const querySelectBlog = `SELECT * FROM ${this.tableName} WHERE title=$1;`;
+    const queryValues = [blogTitle];
+    let result = [];
+    try {
+      const res = await this.client.query(querySelectBlog, queryValues);
+      if ( res.rows.length > 0 ){
+        result = res.rows;
+        //console.log(result);
+      }
+    } catch (err) {
+      console.error('getBlogByTitle: error when querying for title:', err);
     }
 
     return result;
@@ -290,10 +337,12 @@ class OBlog {
       console.log(`getMostRecentBlogs: cannot get any blog there is a setup error`);
       return;
     }
-    const querySelectBlog = `SELECT * FROM blog ORDER BY created DESC LIMIT 200;`;
+    const querySelectBlog = `SELECT * FROM ${this.tableName} ORDER BY created DESC LIMIT 200;`;
+    const queryValues = [];
+
     let result = [];
     try {
-      const res = await client.query(querySelectBlog);
+      const res = await this.client.query(querySelectBlog, queryValues);
       if ( res.rows.length > 0 ){
         result = res.rows;
       }
@@ -307,17 +356,17 @@ class OBlog {
   // delete blog based upon the userID (email address) and the blogID (unique primary key)
   async deleteBlog(userData, blogID) {
     if (this.setupError) {
-      console.log(`delBlog: cannot get any blog entry there is a setup error`);
+      console.log(`deleteBlog: cannot get any blog entry there is a setup error`);
       return;
     }
 
     // Implement deletion logic here
-    const queryDeleteBlog = `DELETE FROM blog WHERE id=$1 AND userid=$2;`;
+    const queryDeleteBlog = `DELETE FROM ${this.tableName} WHERE id=$1 AND userid=$2;`;
     const queryValues = [blogID, serverObfuscateData(userData.userId)];
     let result = [];
 
     try {
-      result = await client.query(queryDeleteBlog, queryValues);
+      result = await this.client.query(queryDeleteBlog, queryValues);
     } catch (err) {
       console.error('deleteBlog: error when deleting blog:', err);
     }

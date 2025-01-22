@@ -90,6 +90,7 @@
     <!-- Include the Quill library -->
     <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
     <script>
+      const g_editUrl = "<%=editUrl%>";
       const g_blogData = <%-JSON.stringify(blogData)%>;
       const g_blogContent = "<%=blogData.content%>";
 
@@ -126,7 +127,7 @@
         //console.log(formData);
 
         jQuery.ajax({
-          url: `/blogs/edit/:${g_blogData.id}`,
+          url: g_editUrl,
           data: formData,
           cache: false,
           contentType: false,
@@ -144,8 +145,8 @@
         }); //end of ajax submit
       }); //end of addEventListener
 
-      // Check to see if a 'New' entry or to edit an existing set of data
-      if ( g_blogData.id != 'New' ){
+      // Check to see if a 'New' entry or a title was already provided
+      if ( g_blogData.id != 'New' || g_blogData.title != "" ){
         const editTitle = document.getElementById('title');
         editTitle.value = g_blogData.title;
         quill.clipboard.dangerouslyPasteHTML(decodeHtml(g_blogContent));
