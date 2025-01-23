@@ -3,21 +3,39 @@
 <head>
    <%- include('./partials/head.ejs') %>
    <%- include('./partials/head-scripts.ejs') %>
+   <style>
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url('/images/chatting_color.svg') no-repeat;
+        background-position: center center;
+        background-size: contain;
+        opacity: 0.10; /* Adjust the value as needed */
+        z-index: -1; /* Ensure it stays behind other content */
+      }    
+   </style>
 </head>
 <body>
    <%- include('./partials/nav.ejs') %>
    <div class="container">
+        <div class="row p-2 d-flex justify-content-center align-content-center text-center">
+            <h1 style="opacity:0.8;">Chat Room</h1>
+        </div>    
         <div class="row p-2 d-flex justify-content-center align-content-center">
-            <textarea readonly id="fullChatText" rows="12" style="overflow-y: scroll; resize: none;"><%= previousMessages %></textarea>
+            <textarea readonly id="fullChatText" rows="12" style="overflow-y: scroll; resize: none;opacity:0.8;"><%= previousMessages %></textarea>
         </div>
         <form class="form" id="chatForm" action="" autocomplete="off">
             <div class="row p-3 d-flex justify-content-center align-content-center" id="addChat" style="max-width: 100%;">
                 <div class="col-sm-3 d-flex justify-content-center align-content-center">
                     <div class="col text-center me-2"><h4>User:</h4></div>
-                    <input id="chatUser" type="text" name="user" class="form-control border border-black flex-grow-1" placeholder="<%= userName %>">
+                    <input id="chatUser" type="text" name="user" class="form-control border border-black flex-grow-1" style="opacity:0.8;" placeholder="<%= userName %>">
                 </div>                
                 <div class="col-sm-4 d-flex justify-content-center align-content-center">
-                    <input id="chatText" type="text" name="chat" class="form-control border border-black" placeholder="Type Message Here">
+                    <input id="chatText" type="text" name="chat" class="form-control border border-black" style="opacity:0.8;" placeholder="Type Message Here">
                 </div>
                 <div class="col-sm-1 d-flex justify-content-center align-content-center">
                     <button type="submit" id="chatSubmit" class="btn btn-primary border border-secondary" width="100%">
