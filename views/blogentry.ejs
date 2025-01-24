@@ -9,10 +9,19 @@
     <!-- Include your favorite highlight.js stylesheet -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" rel="stylesheet">
     <style>
+      .ql-editor {
+        background-color: white;
+        min-height: 300px;
+        opacity: 0.8 !important;
+      }
       .border-top-start-end-2 {
-        border-top: 3px solid #007bff!important; /* Top border: 5px thick, solid black */
-        border-left: 3px solid #007bff!important; /* Left border: 5px thick, solid black */
-        border-right: 3px solid #007bff!important; /* Right border: 5px thick, solid black */
+        /* Top, left, and right borders: 3px solid blue */
+        border-top: 3px solid #007bff !important;
+        border-left: 3px solid #007bff !important;
+        border-right: 3px solid #007bff !important;
+      }
+      body {
+        position: relative; /* Ensure layering works properly */
       }
       body::before {
         content: "";
@@ -26,17 +35,8 @@
         background-position: center 33%;
         opacity: 0.20; /* Adjust the value as needed */
         z-index: -1; /* Ensure it stays behind other content */
-      }
-      .ql-toolbar{
-        background-color: white;
-        opacity: 0.8!important;         
-      }
-      .ql-editor{
-        background-color: white;
-        opacity: 0.8!important;  
-        min-height: 300px!important;    
-      }
-    </style>
+      };
+    </style>    
   </head>
 
   <body>

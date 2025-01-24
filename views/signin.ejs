@@ -6,10 +6,11 @@
     <style>
       body{
         background-color: #81b4a5;
+        position: relative; /* Ensure layering works properly */
       }
       body::before {
         content: "";
-        position: absolute;
+        position: fixed;
         top: 0%;
         left: 0%;
         width: 100%;
@@ -17,7 +18,7 @@
         background: url('/images/sign-in/signinbackdrop.svg') no-repeat;
         background-size: cover;
         background-position: center 10%;
-        opacity: 0.66; /* Adjust the value as needed */
+        opacity: 0.5; /* Adjust the value as needed */
         z-index: -1; /* Ensure it stays behind other content */
       }
     </style> 

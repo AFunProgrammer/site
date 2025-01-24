@@ -6,10 +6,11 @@
     <style>
       body{
         background-color: #bdbab5;
+        position: relative; /* Ensure layering works properly */
       }
       body::before {
         content: "";
-        position: absolute;
+        position: fixed;
         top: 0%;
         left: 0%;
         width: 100%;

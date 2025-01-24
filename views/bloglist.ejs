@@ -4,6 +4,9 @@
     <%- include('./partials/head.ejs') %>
     <%- include('./partials/head-scripts.ejs') %>
     <style>
+      body {
+        position: relative; /* Ensure layering works properly */
+      }
       body::before {
           content: "";
           position: fixed;
