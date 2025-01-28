@@ -135,8 +135,10 @@ class OBlog {
         userid text,
         title text,
         content text,
-        backstyle integer,
         backcolor text,
+        imagename text,
+        fillstyle text,
+        opacity decimal default 1,
         attachments text[],
         created timestamp with time zone NOT NULL DEFAULT (current_timestamp AT TIME ZONE 'UTC')
       );
@@ -170,16 +172,18 @@ class OBlog {
 
     const title = blogData.title;
     const content = blogData.content;
-    const backStyle = Number(blogData.backstyle);
     const backColor = blogData.backcolor;
+    const imageName = blogData.imagename;
+    const fillStyle = blogData.fillstyle;
+    const opacity = blogData.opacity;
 
     const queryInsert = `
-      INSERT INTO ${this.tableName} (username, userid, title, content, backstyle, backcolor)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO ${this.tableName} (username, userid, title, content, backcolor, imagename, fillstyle, opacity)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id;
     `;
 
-    const queryValues = [username, userid, title, content, backStyle, backColor];
+    const queryValues = [username, userid, title, content, backColor, imageName, fillStyle, opacity];
 
     try {
       const result = await this.client.query(queryInsert, queryValues);
@@ -200,16 +204,17 @@ class OBlog {
     const blogId = blogData.id;
     const title = blogData.title;
     const content = blogData.content;
-    const backStyle = Number(blogData.backstyle);
     const backColor = blogData.backcolor;
-
+    const imageName = blogData.imagename;
+    const fillStyle = blogData.fillstyle;
+    const opacity = blogData.opacity;
     const queryUpdate = `
       UPDATE ${this.tableName}
-      SET title = $1, content = $2, backstyle = $3, backcolor = $4
-      WHERE id = $5;
+      SET title = $1, content = $2, backcolor = $3, imagename = $4, fillstyle = $5, opacity = $6
+      WHERE id = $7;
     `;
 
-    const queryValues = [title, content, backStyle, backColor, blogId];
+    const queryValues = [title, content, backColor, imageName, fillStyle, opacity, blogId];
 
     try {
       const result = await this.client.query(queryUpdate, queryValues);
