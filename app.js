@@ -5,6 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const uuid = require('uuid');
 const url = require('url');
+const querystring = require('node:querystring');
 
 //const morgan = require('morgan'); //most common database server postgres or mysql // most people use docker for virtualization
 
@@ -677,8 +678,10 @@ app.post('/blogs/edit/:blogID', async (req, res) => {
         id : blogID, // Use this to determine if new or update
         title : fields.title[0],
         content : fields.content[0], // this is html formatted data with 'extra data'
-        backstyle : fields.backstyle[0],
-        backcolor : fields.backcolor[0]
+        backcolor : fields.backcolor[0],
+        imagename : fields.imagename[0],
+        fillstyle : fields.fillstyle[0],
+        opacity : fields.opacity[0]
       };
       
       const userData = { 
@@ -714,8 +717,10 @@ app.get('/blogs/edit/:blogId', async (req, res) => {
   useBlogData.title = "";
   useBlogData.content = "";
   useBlogData.username = req.session.userName;
-  useBlogData.backStyle = 0;
-  useBlogData.backColor = "";
+  useBlogData.backColor = "#ffffff";
+  useBlogData.imageName = "";
+  useBlogData.fillStyle = "contain";
+  useBlogData.opacity = 1;
 
   // Check to see if a specific blogId was entered
   if ( useBlogId != "" && isNumeric(useBlogId) ) {
@@ -735,8 +740,10 @@ app.get('/blogs/edit/:blogId', async (req, res) => {
       useBlogData.title = queryResult.title;
       useBlogData.content = queryResult.content;
       useBlogData.username = req.session.userName;
-      useBlogData.backStyle = queryResult.backstyle;
       useBlogData.backColor = queryResult.backcolor;
+      useBlogData.imageName = queryResult.imagename;
+      useBlogData.fillStyle = queryResult.fillstyle;
+      useBlogData.opacity = queryResult.opacity;
     } else {
       useBlogId = 'New';
     }
@@ -744,9 +751,16 @@ app.get('/blogs/edit/:blogId', async (req, res) => {
     useBlogId = 'New'; //set to new entry because misconfigured
   }
 
+  const backImages = enumerateImagesIn('./public/images/blog/backgrounds')
   let useEditUrl = `/blogs/edit/:${useBlogData.id}`;
   
-  res.render('blogentry', {...setSignInInfo(req), title: useTitle, editUrl: useEditUrl, blogData: useBlogData });
+  res.render('blogentry', 
+    {...setSignInInfo(req), 
+      title: useTitle, 
+      editUrl: useEditUrl, 
+      blogData: useBlogData,
+      blogBackImage: backImages
+  });
   return;
 });
 
@@ -770,12 +784,14 @@ app.get('/blogs/view/:blogId', async (req, res) => {
   }
 
   // setup blog data for edit / new 
-  useBlogData.id = useBlogId;
+  useBlogData.id = queryResult.id;
   useBlogData.title = queryResult.title;
   useBlogData.content = queryResult.content;
   useBlogData.username = queryResult.username;
-  useBlogData.backStyle = queryResult.backstyle;
   useBlogData.backColor = queryResult.backcolor;
+  useBlogData.imageName = queryResult.imagename;
+  useBlogData.fillStyle = queryResult.fillstyle;
+  useBlogData.opacity = queryResult.opacity;
 
   let ownerShow = 'd-none';
   let editUrl = '';
@@ -790,7 +806,7 @@ app.get('/blogs/view/:blogId', async (req, res) => {
     }
   }
 
-  res.render('blogview', 
+  res.render('blogview',
     {...setSignInInfo(req),
       title: useBlogData.title,
       blogData: useBlogData,
@@ -883,8 +899,10 @@ app.post('/dailyscripture/edit/:date', async (req, res) => {
         id : useBlogId, // Use this to determine if new or update
         title : blogDateTitle, //ensure this is correctly formatted
         content : fields.content[0], // this is html formatted data with 'extra data'
-        backstyle : fields.backstyle[0],
-        backcolor : fields.backcolor[0]
+        backcolor : fields.backcolor[0],
+        imagename : fields.imagename[0],
+        fillstyle : fields.fillstyle[0],
+        opacity : fields.opacity[0]
       };
       
       const userData = { 
@@ -933,8 +951,10 @@ app.get('/dailyscripture/edit/:date', async (req, res) => {
   useBlogData.title = useDate;
   useBlogData.content = "";
   useBlogData.username = req.session.userName;
-  useBlogData.backStyle = 0;
-  useBlogData.backColor = "";
+  useBlogData.backColor = "#ffffff";
+  useBlogData.imageName = "";
+  useBlogData.fillStyle = "contain";
+  useBlogData.opacity = 1;
 
   // Check to see if an entry exists for this date already
   try {
@@ -952,14 +972,23 @@ app.get('/dailyscripture/edit/:date', async (req, res) => {
     useBlogData.title = queryResult[0].title;
     useBlogData.content = queryResult[0].content;
     useBlogData.username = req.session.userName;
-    useBlogData.backStyle = queryResult[0].backstyle;
     useBlogData.backColor = queryResult[0].backcolor;
-  }
+    useBlogData.imageName = queryResult[0].imagename;
+    useBlogData.fillStyle = queryResult[0].fillstyle;
+    useBlogData.opacity = queryResult[0].opacity;
+    }
+
+  const backImages = enumerateImagesIn('./public/images/blog/backgrounds')
 
   // remember that the blogs posted / deleted via the ID, use the date to find
   let useEditUrl = `/dailyscripture/edit/:${useDate}`;
 
-  res.render('blogentry', {...setSignInInfo(req), title: useTitle, editUrl: useEditUrl, blogData: useBlogData });
+  res.render('blogentry', 
+    {...setSignInInfo(req),
+      title: useTitle,
+      editUrl: useEditUrl,
+      blogData: useBlogData,
+      blogBackImage: backImages });
 });
 
 //// View a daily scripture entry
@@ -1000,8 +1029,10 @@ app.get('/dailyscripture/view/:date', async (req, res) => {
   useBlogData.title = queryResult[0].title;
   useBlogData.content = queryResult[0].content;
   useBlogData.username = queryResult[0].username;
-  useBlogData.backStyle = queryResult[0].backstyle;
   useBlogData.backColor = queryResult[0].backcolor;
+  useBlogData.imageName = queryResult[0].imagename;
+  useBlogData.fillStyle = queryResult[0].fillstyle;
+  useBlogData.opacity = queryResult[0].opacity;
 
   let useBlogId = useBlogData.id;
   let ownerShow = 'd-none';
@@ -1025,6 +1056,26 @@ app.get('/dailyscripture/view/:date', async (req, res) => {
       blogEditUrl: editUrl,
   });
 });
+
+
+///////////////////////////////////////////////////////////
+// Parsing Query Strings
+///////////////////////////////////////////////////////////
+app.get('/test/querystring', async (req, res) => {
+  const urlQuery = req.query;
+  if ( urlQuery === undefined || Object.keys(urlQuery).length === 0 ){
+    console.log(`/test/querystring: url: ${req.originalUrl} no query string`)
+    return res.status(500).json({ redirectUrl:'https://localhost:3443/' });
+  }
+  const urlQueryString = req.originalUrl;
+
+  console.log(`/test/querystring: parsing url: ${req.originalUrl} query: ${urlQueryString}`);
+  console.log(urlQuery);
+  console.log(`/test/querystring: done parsing...`);
+
+  res.status(201).json({ redirectUrl:'https://localhost:3443/', queryResult:urlQuery });
+});
+
 
 
 ///////////////////////////////////////////////////////////
@@ -1192,6 +1243,23 @@ function isNumeric(str) {
          !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
 }
 
+
+// get all the images from a path
+function enumerateImagesIn(relativePath){
+  const files = fs.readdirSync(relativePath);
+
+  const fileData = files.map(file => {
+    const fileName = path.basename(file);
+    const nameWithoutExtension = path.parse(file).name;
+  
+    return {
+      fileName: fileName,
+      name: nameWithoutExtension
+    };
+  });
+
+  return fileData;
+}
 
 /**
  * @param req express http request
