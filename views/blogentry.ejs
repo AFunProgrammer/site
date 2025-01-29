@@ -49,35 +49,38 @@
           <!-- <div id="editor" class="border border-2 border-primary bg-white-transparent-50" style="height: 300px;"></div> -->
           <div id="toolbar-container" class="border-top-start-end-2 rounded bg-white-transparent-50">
             <span class="ql-formats">
-              <select class="ql-font"></select>
-              <select class="ql-size"></select>
+              <select class="ql-font" title="Font"></select>
+              <select class="ql-size" title="Text Size"></select>
             </span>
             <span class="ql-formats">
-              <button class="ql-bold"></button>
-              <button class="ql-italic"></button>
-              <button class="ql-underline"></button>
-              <button class="ql-strike"></button>
+              <button class="ql-clean" title="Clear Formatting"></button>
+            </span>            
+            <span class="ql-formats">
+              <button class="ql-bold" title="Bold"></button>
+              <button class="ql-italic" title="Italics"></button>
+              <button class="ql-underline" title="Underline"></button>
+              <button class="ql-strike" title="Strike-Through"></button>
             </span>
             <span class="ql-formats">
-              <select class="ql-color"></select>
-              <select class="ql-background"></select>
+              <select class="ql-color" title="Font Color"></select>
+              <select class="ql-background" title="Highlight"></select>
             </span>
             <span class="ql-formats">
-              <button class="ql-script" value="sub"></button>
-              <button class="ql-script" value="super"></button>
+              <button class="ql-script" value="sub" title="Subscript"></button>
+              <button class="ql-script" value="super" title="Superscript"></button>
             </span>
             <span class="ql-formats">
-              <button class="ql-list" value="ordered"></button>
-              <button class="ql-list" value="bullet"></button>
-              <button class="ql-indent" value="-1"></button>
-              <button class="ql-indent" value="+1"></button>
+              <button class="ql-list" value="ordered" title="Ordered List"></button>
+              <button class="ql-list" value="bullet" title="Bullet List"></button>
+              <button class="ql-indent" value="-1" title="Decrease Indent"></button>
+              <button class="ql-indent" value="+1" title="Increase Indent"></button>
             </span>
             <span class="ql-formats">
-              <button class="ql-direction" value="rtl"></button>
-              <select class="ql-align"></select>
+              <button class="ql-direction" value="rtl" title="Direction"></button>
+              <select class="ql-align" title="Alignment"></select>
             </span>
             <span class="ql-formats">
-              <button class="ql-link"></button>
+              <button class="ql-link" title="Add Link"></button>
             </span>
           </div>
           <div id="editor" class="border border-3 border-primary rounded bg-white-transparent-50"></div>
@@ -181,6 +184,17 @@
         blogBackGround.style.opacity = `${valueElement.value}`;
       }
 
+      // post processing to set the fill style text display to the current value input by ejs
+      function fixFillStyle(){
+        const fillStyle = document.getElementById("fillstyle");
+        const fillStyleList = document.getElementById("fill-style-list").querySelectorAll("a");
+        fillStyleList.forEach(function(fillStyleItem){
+          if ( fillStyleItem.dataset.value == fillStyle.dataset.value ){
+            fillStyle.value = fillStyleItem.dataset.name;
+          }
+        });
+      }
+
       // Handle form submission
       document.getElementById('blogForm').addEventListener('submit', function(event) {
         event.preventDefault();
@@ -229,7 +243,7 @@
         modules: 
         {
           syntax: true,
-          toolbar: '#toolbar-container'
+          toolbar: '#toolbar-container',
         },
         placeholder: 'Blog Entry',
         theme: 'snow'
@@ -242,6 +256,11 @@
         quill.clipboard.dangerouslyPasteHTML(decodeHtml(g_blogContent));
       }
 
+      // tooltips for readability when editing
+      $( document ).tooltip();
+
+      // set the fill style text display to the current value input by ejs
+      fixFillStyle();
     </script>
     <%- include('./partials/body-script.ejs') %>
     <%- include('./partials/footer.ejs') %>
