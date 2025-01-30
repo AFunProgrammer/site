@@ -257,7 +257,12 @@
       }
 
       // tooltips for readability when editing
-      $( document ).tooltip();
+      $( document ).tooltip({ 
+                position: { 
+                    my: "left top-125%", 
+                    at: "top center" 
+                } 
+            });
 
       // set the fill style text display to the current value input by ejs
       fixFillStyle();
