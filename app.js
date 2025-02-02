@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const uuid = require('uuid');
 const url = require('url');
 const querystring = require('node:querystring');
+const entities = require('entities');
 
 //const morgan = require('morgan'); //most common database server postgres or mysql // most people use docker for virtualization
 
@@ -36,6 +37,10 @@ const OBlog = require('./blog.js');
 ////////////////////////////////////////////
 // Global Variables:
 ////////////////////////////////////////////
+// ProxyDNS's IP ranges for IPv4 and IPv6 (you can update these regularly)
+const proxyDNSV4IpRanges = [];
+const proxyDNSV6IpRanges = [];
+
 var lastMulterDirectory = '';
 var setGamePath = "";
 var messages = [];
@@ -163,8 +168,11 @@ const io = new Server(server);
 // Disable certain behavior
 app.disable('x-powered-by')
 
-// Express Setup
+// Express Setup View Engine
 app.set('view engine', 'ejs');
+// Express Setup Trust Cloudflare as a proxy
+app.set('trust proxy', 1);  // This enables trust for the first proxy (Cloudflare)
+
 
 ////////////////////////////////////////////////////////
 // Processing of Connection and Requests
@@ -175,6 +183,23 @@ app.use( session(sessionOptions) );
 
 //redirect any page from http to https (only works on HTTP port 3000)
 app.use((req, res, next) => {
+  // const sessionId = req.sessionID;
+  // Get the incoming ip address and verify it's in the proxy range
+  // const ip = req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for']?.split(',')[0] || req.connection.remoteAddress;
+  // console.log(`Incoming Session ID: ${sessionId} | From IP Address: ${ip}`);
+
+  // Check if the proxy IP is from Cloudflare's range
+  // const isCloudflare = ipRangeCheck(ip, proxyDNSV4IpRanges) || ipRangeCheck(ip, proxyDNSV6IpRanges);
+
+  // if (!isCloudflare) {
+    // Reject any requests that don't come from Cloudflare
+    // return res.status(403).send('Forbidden: Invalid proxy');
+  //}
+
+  // If trusted, log the session ID and the real client IP (last in the X-Forwarded-For chain)
+  //const realClientIp = req.headers['x-forwarded-for']?.split(',').pop() || req.connection.remoteAddress;
+  //console.log(`Incoming Session ID: ${sessionId} | Real Client IP: ${realClientIp} | Proxy IP: ${ip}`);
+
   if ( !isSecure(req) && req.url.search("well-known") <= 0) { 
     const redirectHost = req.headers.host.replace("3000","3443");
     const redirectUrl = `https://${redirectHost}${req.url}`;
@@ -1481,6 +1506,36 @@ async function updateGamePath(req, res, next){
   next();
 }
 
+const updateProxyDnsIpRange = async () => {
+  try {
+    // Fetch Cloudflare IPv4 ranges
+    const { data } = await axios.get('https://www.cloudflare.com/ips-v4');
+    const v4Data = entities.decodeHTML(data);
+    v4Data.split('\n').forEach((value) => {
+      proxyDNSV4IpRanges.push(value);
+    });
+    fs.writeFileSync('./private/settings/cloudflare-ips-v4.log', v4Data); // Save the data to a file if needed
+
+    // Fetch Cloudflare IPv6 ranges
+    const { data: dataV6 } = await axios.get('https://www.cloudflare.com/ips-v6');
+    const v6Data = entities.decodeHTML(dataV6);
+    v6Data.split('\n').forEach((value) => {
+      proxyDNSV6IpRanges.push(value);
+    });
+    fs.writeFileSync('./private/settings/cloudflare-ips-v6.log', v6Data); // Save the data to a file if needed
+
+    console.log('Proxy DNS IP ranges updated successfully.');
+
+    // Dynamically set the updated Cloudflare IP ranges in `trust proxy`
+    const updatedRanges = [...proxyDNSV4IpRanges, ...proxyDNSV6IpRanges];
+    app.set('trust proxy', updatedRanges.join(', ')); // Set it as a comma-separated string
+
+    console.log('Trust proxy updated with Cloudflare IP ranges.');
+
+  } catch (err) {
+    console.error('Failed to update Proxy DNS IPs:', err);
+  }
+};
 
 ////////////////////////////////////////////////////
 // anything that needs to run at startup
@@ -1490,3 +1545,8 @@ OBlog.getGlobalInstance();
 
 console.log('Global: Code Verifier:', codeVerifier);
 console.log('Global: Code Challenge:', codeChallenge);
+
+// Call it periodically (e.g., once a day)
+updateProxyDnsIpRange();
+setInterval(updateProxyDnsIpRange, 24 * 60 * 60 * 1000);  // 24 hours interval
+

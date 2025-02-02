@@ -8,6 +8,7 @@
     "cropperjs": "^1.6.2",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.9",
+    "entities": "^6.0.0",
     "express": "^5.0.0",
     "express-session": "^1.18.0",
     "formidable": "^3.5.1",
