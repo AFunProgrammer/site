@@ -1,6 +1,6 @@
 /*!
  * script.js 0.0.1
- * Anderson Family Website Public JavaScript
+ * Family Website Public JavaScript
  * Supporting universal site functions
  *
  */

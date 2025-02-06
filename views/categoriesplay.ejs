@@ -51,13 +51,13 @@
     </style>
 
     <template id="template-set">
-      <div class="d-flex flex-row flex-nowrap justify-content-center set" style="overflow:hidden;width:auto" data-solved="false" data-set="XX">
+      <div class="row justify-content-center mt-2 mb-2 set" style="overflow:hidden;width:auto" data-solved="false" data-set="XX">
       </div>
     </template>
 
     <template id="template-spot">
-      <div class="d-flex flex-column flex-fill align-items-center spot">
-        <div class="square rounded" 
+      <div class="col align-items-center ms-1 me-1 spot">
+        <div class="square rounded p-1" 
              onclick="clickSelect()"
              onmouseover="mouseOverHighlight()"
              onmouseleave="mouseLeaveUnHighlight()"
@@ -75,11 +75,9 @@
   </head>
 
   <body style="background-color: coral;">
-    
     <%- include('./partials/nav.ejs') %>
-
     <!---------- Answer Dialog ----------->
-    <div class="modal" data-bs-backdrop="static" tabindex="-1" id="dlgAnswer">
+    <div class="modal mx-auto" data-bs-backdrop="static" tabindex="-1" id="dlgAnswer">
       <div class="modal-dialog modal-dialog-centered" style="background-color: rgba(0,0,0,0.0);">
         <div class="modal-content" style="background-color: rgba(0,0,0,0.35);">
           <div class="modal-body" style="background-color: rgba(0,0,0,0.35);">
@@ -100,7 +98,7 @@
     <!------- End of Answer Dialog ----------->
 
     <!---------- You Are [Correct/Wrong] Dialog ----------->
-    <div class="modal" data-bs-backdrop="static" tabindex="-1" id="dlgCorrect">
+    <div class="modal mx-auto" data-bs-backdrop="static" tabindex="-1" id="dlgCorrect">
       <div class="modal-dialog modal-dialog-centered" style="background-color: rgba(0,0,0,0.0);">
         <div class="modal-content" style="background-color: rgba(0,0,0,0.35);">
           <div class="modal-body" style="background-color: rgba(0,0,0,0.35);">
@@ -131,26 +129,30 @@
     <!----------- End of You Are [Correct/Wrong] Dialog ------------>    
 
     <!------- Start of Game Layout ------>
-    <div class="container-fluid align-top justify-content-center" style="min-height:90vh;max-width:1020px;" id="categories">
+    <div id="categories" class="container-fluid align-items-center justify-content-center text-center vh-100">
       <div class="row justify-content-center" style="width:100%;">
-        <span class="text-shadow" style="font-size:1em;width:auto;">Select 
-          <span id="fldItems" class="text-shadow text-warning" ></span>
+        <span class="text-shadow" style="font-size:1.5em;width:auto;">Select 
+          <span id="fldItems" class="text-shadow text-success" ></span>
           items that share the same idea to form
-          <span id="fldGroups" class="text-shadow text-warning"></span>
+          <span id="fldGroups" class="text-shadow text-success"></span>
           different groups of items
         </span>
       </div>
       <div class="row justify-content-center" style="width:100%;">
-        <span class="text-shadow" style="font-size:1.5em;width:auto;">You've earned 
+        <span class="text-shadow" style="font-size:2em;width:auto;">
           <span id="fldEarnedPts" class="text-shadow text-info" ></span>
-          points out of 
+          out of 
           <span id="fldTotalPts" class="text-shadow text-success"></span>
-          total points
+          points
          </span>
       </div>
       <div class="row justify-content-center" style="width:100%;">
-        <span class="text-shadow" style="width:auto;">This puzzle was brought to you by: <%=madeBy%></span>
-      </div>      
+        <span class="text-shadow" style="width:auto;">Puzzle created by: <%=madeBy%></span>
+      </div>
+      <div id="board" class="container m0 p0 align-items-center justify-content-center text-center" style="width:100%;height:100%;">
+
+
+      </div>     
     </div>
     <!-------- End of Game Layout ------->
     <%- include('./partials/body-script.ejs') %>
@@ -546,28 +548,26 @@
         }
 
         function resizeSpots(){
-          let rows = Array.from(document.getElementsByClassName("set"));
-          let cols = Array.from(document.getElementsByClassName("spot"));
+          const rows = Array.from(document.getElementsByClassName("set")).length || 4;
+          const cols = Array.from(document.getElementsByClassName("spot")).length / rows || 4;
           
-          if ( rows.length == 0 || cols.length == 0 ){
-            //console.log(`resizeSpots: no active game, skipping resize`);
-            return;
-          }
+          const baseNode  = document.getElementById('board');
+          const rect = baseNode.getBoundingClientRect();
+          const baseWidth = parseInt(baseNode.offsetWidth);
+          const baseHeight = window.innerHeight - baseNode.offsetTop;
+          const maxSize = Math.min(Math.round((baseHeight/rows)*.8),Math.round((baseWidth/cols)*.8)).toString() + 'px';
           
-          let baseNode  = document.getElementById('categories');
-          let colWidth = baseNode.offsetWidth / (cols.length / rows.length);
-          let rowHeight = baseNode.offsetHeight /  rows.length;
-          
-          colWidth = Math.min(colWidth, rowHeight);
-          rowHeight = colWidth;
-          for ( const row of rows ){
-            row.style.minHeight = rowHeight + 'px';
-          }
-          
-          //for ( const col of cols ){
-          //  col.style.minWidth = colWidth + 'px';
-          //  col.style.padding = "2px 2px 2px 2px";
-          //}
+          // Get the root element
+          const r = document.querySelector(':root');
+          // Set the value of variable --blue to another value (in this case "lightblue")
+          r.style.setProperty('--categories-element-size', maxSize);
+          r.style.setProperty('--categories-cols', cols);
+          r.style.setProperty('--categories-rows', rows);
+
+          console.log(`max-size: ${maxSize} width: ${baseWidth} height: ${baseHeight}`);
+
+          // force reflow
+          console.log(`doing reflow: getting height: ${document.body.offsetHeight}`);
         }
 
         function resizeContent(){
@@ -617,7 +617,7 @@
           set.dataset.set = SetName;
           set.dataset.solved = "false";
 
-          document.getElementById("categories").appendChild(fragFromTempSet);
+          document.getElementById("board").appendChild(fragFromTempSet);
           //console.log(`addNewSet: added new set: ${set.dataset.set}`);
 
           return true;
@@ -1014,12 +1014,15 @@
         });
 
         document.addEventListener('DOMContentLoaded', function() {
-          //resizeContent();
-          resizeSpots();
           // get the game data for this specific game
           fetch(vGameDataURL)
             .then(resp => resp.json())
-            .then(json => {loadJSONData(json); startNewGame();})
+            .then(json => 
+            {
+              loadJSONData(json);
+              resizeSpots();
+              startNewGame();
+            })
             .catch(err => console.log(err));
 
         }, false);

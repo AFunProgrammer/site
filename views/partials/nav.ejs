@@ -1,90 +1,93 @@
 <!------------ start of navbar header ---------------->
 <header>
-  <nav class="navbar navbar-dark bg-dark fixed-top position-relative">
-    <div class="container-fluid d-flex flex-row">
-      <button class="navbar-toggler d-flex flex-shrink-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasDarkNavbar" aria-controls="offcanvasDarkNavbar">
-        <span class="navbar-toggler-icon text-center"></span>
-      </button>
-      <span class="navbar-header d-flex flex-grow-1 justify-content-center text-center">
-        <a class="navbar-brand text-center" href="/">Family Website</a>
+  <!-- Sticky Navbar Button (Hamburger) -->
+  <div class="position-fixed top-0 end-0 m-1 d-lg-none" style="opacity: 0.50;z-index:1;">
+    <button class="navbar-toggler bg-dark fs-3 p-2 border-0 rounded" 
+            type="button" 
+            data-bs-toggle="offcanvas" 
+            data-bs-target="#offcanvasDarkNavbar" 
+            aria-controls="offcanvasDarkNavbar">
+      <!-- Custom Hamburger Icon (3 lines) - this is -->
+      <span class="navbar-toggler-icon align-items-center justify-content-center text-center m-0 p-0">
+        <img src="/images/buger-line-dark.svg" width="100%" height="100%">
       </span>
-      <div class="offcanvas offcanvas-start text-bg-dark" tabindex="-1" id="offcanvasDarkNavbar" aria-labelledby="offcanvasDarkNavbarLabel">
-        <div class="offcanvas-header d-flex flex-row">
-          <h5 class="offcanvas-title flex-grow-1 pe-none text-center" aria-disabled="true" id="offcanvasDarkNavbarLabel">Website Navigation</h5>
-          <button type="button" class="btn-close btn-close-white flex-shrink-1" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body text-start col">
-          <ul class="navbar-nav align-items-start pe-3 row">
-            <li class="nav-item">
-              <a class="nav-link" href="/">Home Page</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/dailyscripture/view/:Today">Daily Scripture</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/blogs">Blogs</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/blogs/edit/:New">New Blog Entry</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/categories">Categories Game List</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/categories/edit/:New">Categories Game Create</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/chat">Chat</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/turnourheart">Turn Our Hearts To The Lord</a>
-            </li>
-          </ul>
-        </div>
-        <!-------------------------- Sign In / Out Footer -------------------------------------->
-        <div class="offcanvas-footer">
-          <ul class="navbar-nav justify-content-center text-center align-content-center align-items-end row">
-            <div class="d-flex justify-content-center align-items-start">
-              <p class="pe-none text-start fs-3" tabindex="-1"><%=signedInType%></p>
-            </div>
-            <div class="d-flex justify-content-center align-items-start">
-              <p id="signedInAs" class="<%=signedInNameVisible%> pe-none text-start fs-5 fw-bold" tabindex="-1"><%=signedInUserName%></p>
-            </div>
-            <div class="d-flex justify-content-center align-items-start">
-              <p id="signedInAs" class="<%=signedInEmailVisible%> pe-none text-start fs-6 fw-bold" tabindex="-1"><%=signedInUserEmail%></p>
-            </div>
-            <div class="container-fluid w-75">
-              <a id="signInSite" class="w-100 h-100" href="<%=signedInOutPath%>" onclick="getLastPath()">
-                <p class="text-center fs-3"><%=signedInOutText%></p>
-              </a>
-            </div>
-          </ul>
-        </div>
-        <!-------------------------- END of Sign In / Out Footer ------------------------------->
+    </button>
+  </div>
+  
+  <!-- Offcanvas Menu (Shows only when hamburger is clicked) -->
+  <div class="offcanvas offcanvas-start text-bg-dark <%=navMenuShow%> <%=navMenuSize%>" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="offcanvasDarkNavbar" aria-labelledby="offcanvasDarkNavbarLabel">
+    <div class="offcanvas-header justify-content-center">
+      <h5 class="offcanvas-title" id="offcanvasDarkNavbarLabel">Family Website</h5>
+      <button type="button" class="btn-close btn-close-white d-lg-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" href="/">Home Page</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/dailyscripture/view/:Today">Daily Scripture</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/blogs">Blogs</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/blogs/edit/:New">New Blog Entry</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/categories">Categories Game List</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/categories/edit/:New">Categories Game Create</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/chat">Chat</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/turnourheart">Turn Our Hearts To The Lord</a>
+        </li>
+      </ul>
+    </div>
+    <!-- Sign In / Out Footer -->
+    <div class="offcanvas-footer text-center pt-3">
+      <div class="d-flex p-0 m-0 justify-content-center align-items-start <%=signInVisibility%>">
+        <p class="mb-2 text-start fs-4" tabindex="-1"><%=signedInType%></p>
+      </div>
+      <div class="d-flex p-0 m-0 justify-content-center align-items-start <%=signInVisibility%>">
+        <p id="signedInAs" class="mb-2 text-start fs-5 fw-bold" tabindex="-1"><%=signedInUserName%></p>
+      </div>
+      <div class="d-flex p-0 m-0 justify-content-center align-items-start <%=signInVisibility%>">
+        <p id="signedInAs" class="mb-2 text-start fs-6 fw-bold" tabindex="-1"><%=signedInUserEmail%></p>
+      </div>
+      <div class="container-fluid w-75">
+        <a id="signInSite" class="w-100 h-100" href="<%=signedInOutPath%>" onclick="getLastPath()">
+          <p class="text-center fs-3"><%=signedInOutText%></p>
+        </a>
       </div>
     </div>
-  </nav>
-  <!--------- Sign In Script For Nicety -------->
-  <script>
-    function getLastPath() {
-      const signInInfo = {
-        path: window.location.pathname,
-        time: new Date().getDate(),
-      }
-
-      $.ajax({
-        type: "POST",
-        url: "/signin/lastpath",
-        contentType: 'application/json',
-        method: 'POST',        
-        data: JSON.stringify(signInInfo), // Send the current path as data
-        success: function() {
-            // Redirect the user after sign-in
-            console.log('successfully posted the info');
-        }
-      });
-    }
-  </script>
-  <!--------- Sign In Script For Nicety -------->
+  </div>
+  
 </header>
 <!------------ end of navbar header ---------------->
+
+<!-- Sign In Script For Nicety -->
+<script>
+  function getLastPath() {
+    const signInInfo = {
+      path: window.location.pathname,
+      time: new Date().getDate(),
+    }
+
+    $.ajax({
+      type: "POST",
+      url: "/signin/lastpath",
+      contentType: 'application/json',
+      method: 'POST',        
+      data: JSON.stringify(signInInfo), // Send the current path as data
+      success: function() {
+          // Redirect the user after sign-in
+          console.log('successfully posted the info');
+      }
+    });
+  }
+</script>

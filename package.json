@@ -18,6 +18,7 @@
     "ioredis": "^5.3.2",
     "lodash": "^4.17.21",
     "mkdirp": "^3.0.1",
+    "mobile-detect": "^1.4.5",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.14",
     "nodemailer-openpgp": "^2.2.1",
