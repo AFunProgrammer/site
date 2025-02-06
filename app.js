@@ -19,6 +19,9 @@ const bodyParser = require('body-parser');
 const formidable = require('formidable');
 const multer = require('multer');
 
+// web agent
+const mobileDetect = require('mobile-detect');
+
 // private functions
 const { serverEncrypt, serverDecrypt, serverObfuscateData } = require('./private/code/crypto_utils.js');
 
@@ -1392,23 +1395,34 @@ function saveCreatedByInfo(req, filePath) {
 ///////////////////////////////////////////////////////////
 function setSignInInfo(req){
   const signInInfo = {
+    signInVisibility: 'd-none',
     signedInType:'Not Signed In',
-    signedInNameVisible: 'invisible',
     signedInUserName: null,
-    signedInEmailVisible: 'invisible',
     signedInUserEmail: null,
     signedInOutPath: '/signin',
     signedInOutText: 'Sign In',
+    navMenuShow: 'show',
+    navMenuSize: 'w-25',
+    navBodyPad: '25%',
   }
   //console.log(req.session);
   if ( req.session.authenticated ){
+    signInInfo['signInVisibility'] = '',
     signInInfo['signedInType'] = 'Signed In As';
-    signInInfo['signedInNameVisible'] = 'visible';
     signInInfo['signedInUserName'] = req.session.userName;
-    signInInfo['signedInEmailVisible'] = 'visible';
     signInInfo['signedInUserEmail'] = req.session.userId;    
     signInInfo['signedInOutPath'] = '/signout';
     signInInfo['signedInOutText'] = 'Sign Out';
+  }
+
+  // check for mobile user agent
+  const md = new mobileDetect(req.headers['user-agent']);
+
+  if (md.mobile() || md.tablet()) {
+    // User is on a mobile device
+    signInInfo['navMenuShow'] = '';    
+    signInInfo['navMenuSize'] = 'w-100';
+    signInInfo['navBodyPad'] = '0%';
   }
 
   return signInInfo;

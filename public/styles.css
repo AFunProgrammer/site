@@ -4,6 +4,12 @@ html, body {
   padding: 0;
 }
 
+:root {
+  --categories-rows: 4;
+  --categories-cols: 4;
+  --categories-element-size: 20%;
+}
+
 .start-content{
   /* height: 100vh; */
   margin: 0;
@@ -12,27 +18,27 @@ html, body {
 }
 
 .set {
-  flex: 1 1 20vw;
-  max-height: 200px!important;
+  margin-top: 1px;
+  margin-bottom: 1px;
+  min-height: var(--categories-element-size)!important;
+  max-height: var(--categories-element-size)!important;
   background-color:rgba(0,0,0,0);
 }
 
 .spot {
-  flex: 1 1 10vw;
-  max-height: 200px!important;
-  max-width: 200px!important;
-  padding: 3px 3px 3px 3px!important;
+  margin-left: 1px;
+  margin-right: 1px;
+  min-width: var(--categories-element-size)!important;
+  max-width: var(--categories-element-size)!important;
   aspect-ratio: 1/1;
   background-color:rgba(0,0,0,0);
 }
 
 .square {
-  flex: 1 1 auto!important;
-  min-width: 10px!important;
-  min-height: 10px!important;
-  max-width: 200px!important; /* Fixed width */
-  max-height: 200px!important; /* Fixed height */
-  padding: 3px 3px 3px 3px!important;
+  /*flex: 1 1 auto!important;*/
+  height: var(--categories-element-size)!important;
+  min-height: var(--categories-element-size)!important;
+  max-height: var(--categories-element-size)!important;
   position: relative;
   aspect-ratio: 1/1 !important;
   background-repeat: no-repeat;
