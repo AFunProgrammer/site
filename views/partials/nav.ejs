@@ -23,28 +23,64 @@
     <div class="offcanvas-body">
       <ul class="navbar-nav">
         <li class="nav-item">
-          <a class="nav-link" href="/">Home Page</a>
+          <a class="nav-link" href="/">
+            <img src="/images/icons/home.png" width="48px" height="48px" style="filter: invert(1);">
+            <span class="ms-1 h4 d-inline-block">Home</span>            
+          </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="/dailyscripture/view/:Today">Daily Scripture</a>
+          <a class="nav-link" href="/dailyscripture/view/:Today">
+            <img src="/images/icons/bible.png" width="48px" height="48px" style="filter: invert(1);">
+            <span class="ms-1 h4 d-inline-block">Daily Scripture</span>            
+          </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="/blogs">Blogs</a>
+          <a href="#blogs-submenu" data-bs-toggle="collapse" class="nav-link px-0 align-middle">
+            <img src="/images/icons/blogging.png" width="48px" height="48px" style="filter: invert(1);">
+            <span class="ms-1 h4 d-inline-block">Blogs</span>
+          </a>
+          <ul class="collapse nav flex-column ms-1" id="blogs-submenu" data-bs-parent="#offcanvasDarkNavbar">
+            <li class="w-100">
+                <a href="/blogs" class="nav-link px-0"> <span class="d-inline-block">Recent Blogs</span></a>
+            </li>
+            <li>
+                <a href="/blogs/edit/:New" class="nav-link px-0"> <span class="d-inline-block">New Blog Entry</span></a>
+            </li>
+          </ul>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="/blogs/edit/:New">New Blog Entry</a>
+          <a href="#games-submenu" data-bs-toggle="collapse" class="nav-link px-0 align-middle">
+            <img src="/images/icons/gaming.png" width="48px" height="48px" style="filter: invert(1);">
+            <span class="ms-1 h4 d-inline-block">Games</span>
+          </a>
+          <ul class="collapse nav flex-column ms-1" id="games-submenu" data-bs-parent="#offcanvasDarkNavbar">
+            <li class="w-100">
+              <a href="#categories-submenu" data-bs-toggle="collapse" class="nav-link px-0 align-middle">
+                <img src="/images/icons/categories.png" width="48px" height="48px" style="filter: invert(1);">
+                <span class="ms-1 h4 d-inline-block">Categories</span>
+              </a>
+              <ul class="collapse nav flex-column ms-1" id="categories-submenu" data-bs-parent="#games-submenu">
+                <li class="w-100">
+                  <a href="/categories" class="nav-link px-0"> <span class="d-inline-block">Games List</span></a>
+                </li>
+                <li>
+                    <a href="/categories/edit/:New" class="nav-link px-0"> <span class="d-inline-block">Create New</span></a>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </li>        
+        <li class="nav-item">
+          <a class="nav-link" href="/chat">
+            <img src="/images/icons/chat.png" width="48px" height="48px" style="filter: invert(1);">
+            <span class="ms-1 h4 d-inline-block">Online Chat</span>
+          </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="/categories">Categories Game List</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/categories/edit/:New">Categories Game Create</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/chat">Chat</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/turnourheart">Turn Our Hearts To The Lord</a>
+          <a class="nav-link" href="/lord">
+            <img src="/images/icons/savior.png" width="48px" height="48px" style="filter: invert(1);">
+            <span class="ms-1 h4 d-inline-block">Come Unto The Lord</span>
+          </a>
         </li>
       </ul>
     </div>
