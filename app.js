@@ -49,9 +49,9 @@ var setGamePath = "";
 var messages = [];
 const settings = require('./private/settings/private.json');
 // DEV - LocalHost
-const envFile = require('./private/settings/local.json');
+//const envFile = require('./private/settings/local.json');
 // PROD - WebSite
-//const envFile = require('./private/settings/website.json');
+const envFile = require('./private/settings/website.json');
 
 var sessionOptions = {
   cookie: {
@@ -458,7 +458,7 @@ app.get('/noaccess', (req, res) => {
 });
 
 // Heart
-app.get('/turnourheart', (req, res) => {
+app.get('/lord', (req, res) => {
   res.render('heart', {...setSignInInfo(req), title: 'Turn Our Hearts To The Lord' });
 });
 
