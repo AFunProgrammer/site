@@ -34,7 +34,19 @@
     <%- include('./partials/nav.ejs') %>
     <div class="container align-content-center justify-content-center mt-5" style="position:relative;max-width: 1000px;">
       <div class="row">
-        <div class="text-center h1"><%=blogData.title%></div>
+        <dive class="col text-center">
+          <button type="button" class="btn btn-primary" onclick="previousEntry()">
+            <i class="bi bi-arrow-left"></i> Previous
+          </button>
+        </dive>
+        <div class="col text-center">
+          <div class="text-center h1"><%=blogData.title%></div>
+        </div>
+        <dive class="col text-center">
+          <button type="button" class="btn btn-primary" onclick="nextEntry()">
+            Next <i class="bi bi-arrow-right"></i>
+          </button>
+        </dive>
       </div>
       <div class="row">
           <div class="text-center">by: <%=blogData.username %></div>
@@ -57,7 +69,29 @@
     <script>
       const blogContent = "<%=blogData.content%>";
       const blogEditUrl = "<%=blogEditUrl%>";
+      const blogViewUrl = "<%=blogViewUrl%>";
+      const previousDateEntry = "<%=blogData.previousDate%>";
+      const nextDateEntry = "<%=blogData.nextDate%>";
 
+
+      function previousEntry(){
+        // Send previous date (if it exists) to a REST endpoint to get the previous blog entry
+        if ( !previousDateEntry || blogViewUrl == "" ){
+          return;
+        }
+        window.location.href = `${blogViewUrl}${previousDateEntry}`;
+      }
+      function nextEntry(){
+        // Send next date (if it exists) to a REST endpoint to get the next blog entry
+        if ( !nextDateEntry || blogViewUrl == "" ){
+          return;
+        }
+        window.location.href = `${blogViewUrl}${nextDateEntry}`;
+      }
+
+      // Function to handle the edit button click
+      // This function will redirect to the edit page if the URL is set
+      // If the URL is not set, it will do nothing
       function editBlog(){
         if ( blogEditUrl && blogEditUrl != "" ){
           window.location.href = blogEditUrl;

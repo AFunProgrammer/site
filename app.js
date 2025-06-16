@@ -49,9 +49,9 @@ var setGamePath = "";
 var messages = [];
 const settings = require('./private/settings/private.json');
 // DEV - LocalHost
-//const envFile = require('./private/settings/local.json');
+const envFile = require('./private/settings/local.json');
 // PROD - WebSite
-const envFile = require('./private/settings/website.json');
+//const envFile = require('./private/settings/website.json');
 
 var sessionOptions = {
   cookie: {
@@ -949,7 +949,6 @@ app.post('/dailyscripture/edit/:date', async (req, res) => {
   });
 });
 
-
 //// Create or edit daily scripture entry...
 app.get('/dailyscripture/edit/:date', async (req, res) => {
   const addToMonth = (new Date('01-01-01').getMonth() == 0 ? 1 : 0); // Why in the heck use 0 based Month?
@@ -1052,6 +1051,32 @@ app.get('/dailyscripture/view/:date', async (req, res) => {
       notFoundMsg: `Date of "${useDate}" not found<br>Go back and check the /:Date` });
   }
 
+  // Get previous and next dates for viewing those scripture blog entries
+  try {
+    let previousDate = new Date(Date.parse(useDate));
+    let nextDate = new Date(Date.parse(useDate));
+    for (let i=1; i < 10; i++) { // check out for one 10 days in either direction
+      if ( useBlogData.previousDate === undefined ){
+        previousDate.setDate(previousDate.getDate() - i);
+        let previousDateBlogTitle = `${previousDate.getMonth()+addToMonth}-${previousDate.getDate()}-${previousDate.getFullYear()}`;
+        let prevResult = await OBlog.getGlobalInstance('scripture').doesBlogByTitleExist(previousDateBlogTitle);
+        if ( prevResult ){
+          useBlogData.previousDate = previousDateBlogTitle;
+        }
+      }
+      if ( useBlogData.nextDate === undefined ){
+        nextDate.setDate(nextDate.getDate() + i);
+        let nextDateBlogTitle = `${nextDate.getMonth()+addToMonth}-${nextDate.getDate()}-${nextDate.getFullYear()}`;
+        let nextResult = await OBlog.getGlobalInstance('scripture').doesBlogByTitleExist(nextDateBlogTitle);
+        if ( nextResult ){
+          useBlogData.nextDate = nextDateBlogTitle;
+        }
+      }
+    }
+  } catch(error) {
+    console.error(error);
+  }
+
   // setup blog data for edit / new 
   useBlogData.id = queryResult[0].id;
   useBlogData.title = queryResult[0].title;
@@ -1061,8 +1086,10 @@ app.get('/dailyscripture/view/:date', async (req, res) => {
   useBlogData.imageName = queryResult[0].imagename;
   useBlogData.fillStyle = queryResult[0].fillstyle;
   useBlogData.opacity = queryResult[0].opacity;
+  
+  useBlogData.previousDate = useBlogData.previousDate || ""; // default to an empty string
+  useBlogData.nextDate = useBlogData.nextDate || ""; // default to an empty string
 
-  let useBlogId = useBlogData.id;
   let ownerShow = 'd-none';
   let editUrl = '';
 
@@ -1082,6 +1109,7 @@ app.get('/dailyscripture/view/:date', async (req, res) => {
       blogData: useBlogData,
       blogOwnerShow: ownerShow,
       blogEditUrl: editUrl,
+      blogViewUrl: `/dailyscripture/view/:`
   });
 });
 

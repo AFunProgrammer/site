@@ -293,6 +293,26 @@ class OBlog {
     return result;
   }
 
+  // check if a blog entry exists by blogID to give simple boolean respone
+  async doesBlogExist(blogID){
+    if (this.setupError) {
+      console.log(`doesBlogExist: cannot get any blog entry there is a setup error`);
+      return false;
+    }
+    const querySelectBlog = `SELECT * FROM ${this.tableName} WHERE id=$1;`;
+    const queryValues = [blogID];
+    let result = false;
+    try {
+      const res = await this.client.query(querySelectBlog, queryValues);
+      if ( res.rows.length > 0 ){
+        result = true;
+      }
+    } catch (err) {
+      console.error('doesBlogExist: error when querying for blogID:', err);
+    }
+    return result;
+  }
+
   async getBlog(blogID){
     if (this.setupError) {
       console.log(`getBlog: cannot get any blog entry there is a setup error`);
@@ -312,6 +332,27 @@ class OBlog {
       console.error('getBlog: error when querying for blogID:', err);
     }
 
+    return result;
+  }
+
+  // check if a blog entry exists by title to give simple boolean respone
+  //  to allow for creation of linking url to get next / previous blog entry by title
+  async doesBlogByTitleExist(blogTitle){
+    if (this.setupError) {
+      console.log(`doesBlogByTitleExist: cannot get any blog entry there is a setup error`);
+      return false;
+    }
+    const querySelectBlog = `SELECT * FROM ${this.tableName} WHERE title=$1;`;
+    const queryValues = [blogTitle];
+    let result = false;
+    try {
+      const res = await this.client.query(querySelectBlog, queryValues);
+      if ( res.rows.length > 0 ){
+        result = true;
+      }
+    } catch (err) {
+      console.error('doesBlogByTitleExist: error when querying for title:', err);
+    }
     return result;
   }
 
