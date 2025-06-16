@@ -35,7 +35,7 @@
     <div class="container align-content-center justify-content-center mt-5" style="position:relative;max-width: 1000px;">
       <div class="row">
         <dive class="col text-center">
-          <button type="button" class="btn btn-primary" onclick="previousEntry()">
+          <button type="button" class="btn btn-primary <%=blogData.previousEntry ? '' : 'd-none'%>" onclick="previousEntry()">
             <i class="bi bi-arrow-left"></i> Previous
           </button>
         </dive>
@@ -43,7 +43,7 @@
           <div class="text-center h1"><%=blogData.title%></div>
         </div>
         <dive class="col text-center">
-          <button type="button" class="btn btn-primary" onclick="nextEntry()">
+          <button type="button" class="btn btn-primary <%=blogData.nextEntry ? '' : "d-none"%>" onclick="nextEntry()">
             Next <i class="bi bi-arrow-right"></i>
           </button>
         </dive>
@@ -69,24 +69,24 @@
     <script>
       const blogContent = "<%=blogData.content%>";
       const blogEditUrl = "<%=blogEditUrl%>";
-      const blogViewUrl = "<%=blogViewUrl%>";
-      const previousDateEntry = "<%=blogData.previousDate%>";
-      const nextDateEntry = "<%=blogData.nextDate%>";
+      const blogViewUrl = "<%=blogViewUrl%>" || "";
+      const previousBlogEntry = "<%=blogData.previousEntry%>" || "";
+      const nextBlogEntry = "<%=blogData.nextEntry%>" || "";
 
 
       function previousEntry(){
         // Send previous date (if it exists) to a REST endpoint to get the previous blog entry
-        if ( !previousDateEntry || blogViewUrl == "" ){
+        if ( !previousBlogEntry || blogViewUrl == "" ){
           return;
         }
-        window.location.href = `${blogViewUrl}${previousDateEntry}`;
+        window.location.href = `${blogViewUrl}${previousBlogEntry}`;
       }
       function nextEntry(){
         // Send next date (if it exists) to a REST endpoint to get the next blog entry
-        if ( !nextDateEntry || blogViewUrl == "" ){
+        if ( !nextBlogEntry || blogViewUrl == "" ){
           return;
         }
-        window.location.href = `${blogViewUrl}${nextDateEntry}`;
+        window.location.href = `${blogViewUrl}${nextBlogEntry}`;
       }
 
       // Function to handle the edit button click

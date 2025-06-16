@@ -299,7 +299,7 @@ class OBlog {
       console.log(`doesBlogExist: cannot get any blog entry there is a setup error`);
       return false;
     }
-    const querySelectBlog = `SELECT * FROM ${this.tableName} WHERE id=$1;`;
+    const querySelectBlog = `SELECT id FROM ${this.tableName} WHERE id=$1;`;
     const queryValues = [blogID];
     let result = false;
     try {
@@ -342,7 +342,7 @@ class OBlog {
       console.log(`doesBlogByTitleExist: cannot get any blog entry there is a setup error`);
       return false;
     }
-    const querySelectBlog = `SELECT * FROM ${this.tableName} WHERE title=$1;`;
+    const querySelectBlog = `SELECT title FROM ${this.tableName} WHERE title=$1;`;
     const queryValues = [blogTitle];
     let result = false;
     try {
