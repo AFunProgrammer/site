@@ -820,7 +820,10 @@ app.get('/blogs/view/:blogId', async (req, res) => {
   useBlogData.imageName = queryResult.imagename;
   useBlogData.fillStyle = queryResult.fillstyle;
   useBlogData.opacity = queryResult.opacity;
-
+  
+  useBlogData.previousEntry = "";
+  useBlogData.nextEntry = "";
+  
   let ownerShow = 'd-none';
   let editUrl = '';
 
@@ -840,6 +843,7 @@ app.get('/blogs/view/:blogId', async (req, res) => {
       blogData: useBlogData,
       blogOwnerShow: ownerShow,
       blogEditUrl: editUrl,
+      blogViewUrl: `/blogs/view/:`
   });
 });
 
@@ -1056,20 +1060,20 @@ app.get('/dailyscripture/view/:date', async (req, res) => {
     let previousDate = new Date(Date.parse(useDate));
     let nextDate = new Date(Date.parse(useDate));
     for (let i=1; i < 10; i++) { // check out for one 10 days in either direction
-      if ( useBlogData.previousDate === undefined ){
+      if ( useBlogData.previousEntry === undefined ){
         previousDate.setDate(previousDate.getDate() - i);
         let previousDateBlogTitle = `${previousDate.getMonth()+addToMonth}-${previousDate.getDate()}-${previousDate.getFullYear()}`;
         let prevResult = await OBlog.getGlobalInstance('scripture').doesBlogByTitleExist(previousDateBlogTitle);
         if ( prevResult ){
-          useBlogData.previousDate = previousDateBlogTitle;
+          useBlogData.previousEntry = previousDateBlogTitle;
         }
       }
-      if ( useBlogData.nextDate === undefined ){
+      if ( useBlogData.nextEntry === undefined ){
         nextDate.setDate(nextDate.getDate() + i);
         let nextDateBlogTitle = `${nextDate.getMonth()+addToMonth}-${nextDate.getDate()}-${nextDate.getFullYear()}`;
         let nextResult = await OBlog.getGlobalInstance('scripture').doesBlogByTitleExist(nextDateBlogTitle);
         if ( nextResult ){
-          useBlogData.nextDate = nextDateBlogTitle;
+          useBlogData.nextEntry = nextDateBlogTitle;
         }
       }
     }
@@ -1086,9 +1090,9 @@ app.get('/dailyscripture/view/:date', async (req, res) => {
   useBlogData.imageName = queryResult[0].imagename;
   useBlogData.fillStyle = queryResult[0].fillstyle;
   useBlogData.opacity = queryResult[0].opacity;
-  
-  useBlogData.previousDate = useBlogData.previousDate || ""; // default to an empty string
-  useBlogData.nextDate = useBlogData.nextDate || ""; // default to an empty string
+
+  useBlogData.previousEntry = useBlogData.previousEntry || ""; // default to an empty string
+  useBlogData.nextEntry = useBlogData.nextEntry || ""; // default to an empty string
 
   let ownerShow = 'd-none';
   let editUrl = '';
