@@ -203,14 +203,17 @@ app.use((req, res, next) => {
   //const realClientIp = req.headers['x-forwarded-for']?.split(',').pop() || req.connection.remoteAddress;
   //console.log(`Incoming Session ID: ${sessionId} | Real Client IP: ${realClientIp} | Proxy IP: ${ip}`);
 
-  if ( !isSecure(req) && req.url.search("well-known") <= 0) { 
-    const redirectHost = req.headers.host.replace("3000","3443");
+  const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  const isWellKnown = req.url.startsWith('/.well-known/');
+
+  if (!isSecure && !isWellKnown) {
+    const redirectHost = req.headers.host.replace("3000", "3443");
     const redirectUrl = `https://${redirectHost}${req.url}`;
-    console.log(`redirecting to: ${redirectUrl}`);
-    res.redirect(301, redirectUrl);
-  } else {
-    next();
+    console.log(`Redirecting to: ${redirectUrl}`);
+    return res.redirect(301, redirectUrl);
   }
+
+  next();
 });
 
 app.use( bodyParser.json() );
@@ -1272,6 +1275,28 @@ app.post('/gamedata/:gameid', upload.none(), async (req, res) => {
     }
   });
   res.status(201);
+});
+
+
+///////////////////////////////////////////////////////////
+// Serving Well-Known Identity File(s)
+///////////////////////////////////////////////////////////
+// Serve only the identity file from .well-known
+app.get('/.well-known/microsoft-identity-association.json', (req, res) => {
+  const filePath = path.join(__dirname, 'public', '.well-known', 'microsoft-identity-association.json');
+  console.log("Resolved file path:", filePath);
+  res.type('application/json');
+  res.sendFile('microsoft-identity-association.json', {
+    root: path.join(__dirname, 'public', '.well-known'),
+    headers: { 'Content-Type': 'application/json' }
+  }, (err) => {
+    if (err) {
+      console.error("SendFile error:", err);
+      res.status(err.statusCode || 500).send('File delivery failed');
+    } else {
+      console.log("File successfully sent");
+    }
+  });
 });
 
 
