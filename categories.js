@@ -1,14 +1,17 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 // Class and Object Definitions
 // Manage The Categories Game Data
 //  neatly and concisely as a static object
 //  to make it clear all the functions and 
 //  variables needed to work properly
 class OCategories{
-  static #rootPath = __dirname + "/private/categories/games";
-  static #nextGameNumFile = __dirname + "/private/categories/games/currentsave.txt";
+  static #rootPath = path.join(__dirname, "/private/categories/games");
+  static #nextGameNumFile = path.join(__dirname, "/private/categories/games/currentsave.txt");
   static #currentGameNum = "-1";
   static #listAtGameNum = "-1";
   static #gameList = [];
@@ -288,4 +291,4 @@ class OCategories{
   }
 };
 
-module.exports = OCategories;
+export default OCategories;

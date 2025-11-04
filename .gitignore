@@ -1,11 +1,12 @@
 # ignore files
 *.lock
 package-lock.json
+microsoft-identity-association.json
 
 # ignore directories
 public/videos/
 node_modules/
 private/
-
-
+31087.0x/
+.clinic/
 

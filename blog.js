@@ -1,15 +1,16 @@
-const fs = require('fs');
-const path = require('path');
-const uuid = require('uuid');
+import fs from 'fs';
+import path from 'path';
+import * as uuid from 'uuid';
 
 // settings
-const settings = require("./private/settings/private.json");
-// secure functions
-const { serverObfuscateData } = require('./private/code/crypto_utils.js');
+// import configuration
+import { settings } from './config.js';
 
+// secure functions
+import { serverObfuscateData } from './private/code/crypto_utils.js';
 
 // required connectivity modules
-const { Client } = require('pg');
+import { Client } from 'pg';
 
 class OBlog {
   static globalInstance = [];
@@ -437,4 +438,7 @@ class OBlog {
   }
 }
 
-module.exports = OBlog;
+console.log("blog.js module executed");
+
+export default OBlog;
+

@@ -1,15 +1,16 @@
 // local child process
-const { exec } = require('node:child_process');
-const { spawn } = require('node:child_process');
-const homeDir = require('os').homedir();
+import { exec } from 'node:child_process';
+import { spawn } from 'node:child_process';
+import homeDir from 'os';
 
 //settings
-const settings = require("./private/settings/private.json");
+// import configuration
+import { settings } from './config.js';
 
 // ssh
-const ssh2 = require("ssh2");
-const speakeasy = require("speakeasy");
-const { isGeneratorObject } = require('node:util/types');
+import ssh2 from "ssh2";
+import speakeasy from "speakeasy";
+import { isGeneratorObject } from 'node:util/types';
 const conn = new ssh2.Client();
 
 // e.g. ID  EXT   RESOLUTION FPS CH │   FILESIZE   TBR PROTO │ VCODEC          VBR ACODEC      ABR ASR MORE INFO
@@ -289,8 +290,10 @@ try{
   OMediaDownloader.useLocal = true;
   console.error(error);
 }
-
+setTimeout(() => {
+  console.log("✅ SSH connected, continuing app startup...");
+}, 1000);
 
 
 //~/Documents/programming/yt-dlp/yt-dlp.sh --list-formats https://www.youtube.com/watch?v=IQLn6jgvrN0
-module.exports = OMediaDownloader;
+export default OMediaDownloader;
