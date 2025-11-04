@@ -135,13 +135,8 @@ app.use((req, res, next) => {
   //const realClientIp = req.headers['x-forwarded-for']?.split(',').pop() || req.connection.remoteAddress;
   //console.log(`Incoming Session ID: ${sessionId} | Real Client IP: ${realClientIp} | Proxy IP: ${ip}`);
 
-<<<<<<< Updated upstream
-  const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
-  const isWellKnown = req.url.startsWith('/.well-known/');
-=======
   const isSecure = req.secure || req.headers["x-forwarded-proto"] === "https";
   const isWellKnown = req.url.startsWith("/.well-known/");
->>>>>>> Stashed changes
 
   if (!isSecure && !isWellKnown) {
     const redirectHost = req.headers.host.replace("3000", "3443");
