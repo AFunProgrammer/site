@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <%- include('./partials/head.ejs') %>
+    <%- include('./partials/head-scripts.ejs') %>
+    </head>
+
+<body class="bg-white">
+    <%- include('./partials/nav.ejs') %>
+
+    <main class="container py-5" style="max-width: 850px;">
+        <div class="text-center mb-5">
+            <h1 class="display-5 fw-bold">Beta Program Instructions</h1>
+            <p class="text-muted">Follow these steps to join our testing groups.</p>
+        </div>
+
+        <div class="alert alert-warning border-0 shadow-sm mb-5 d-flex align-items-center">
+            <div class="me-3 fs-3">📧</div> 
+            <div>
+                <h6 class="mb-1 fw-bold">Requirement: Google/GMail Account</h6>
+                <p class="mb-0 small">You must be signed into a <strong>GMail or Google Account</strong> in your browser to access these groups and the Play Store testing links.</p>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-primary rounded-pill me-2">1</span>
+                    <h5 class="card-title text-primary fw-bold mb-0">Join the Group</h5>
+                </div>
+                <p class="card-text">Click on the following link (Reversi Beta Group):</p>
+                <a href="https://groups.google.com/g/reversibetagroup" class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer">
+                    Join Reversi Group
+                </a>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4 border-info">
+            <div class="card-body">
+                <h5 class="card-title text-info fw-bold">Step 1.5</h5>
+                <p class="card-text">Continue to <strong>Step 2</strong> if you see the joining notice. If not, you should see the message in <strong>Step 4</strong> (skip to that one).</p>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title text-primary fw-bold">Step 2</h5>
+                <p class="card-text">Click on "<span class="fw-bold text-primary">joining the group</span>" and it will prompt you to join:</p>
+                <img src="images/image1.png" 
+                    class="img-fluid  border rounded" 
+                    style="max-height: 250px; width: auto;" 
+                    alt="Join Group Prompt">
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title text-primary fw-bold">Step 3</h5>
+                <p class="card-text">Click on "<span class="fw-bold text-primary">Join group</span>". After joining, you should see this:</p>
+                <img src="images/image5.png" alt="Joined Success" class="img-fluid border rounded" style="max-height: 300px;">
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title text-primary fw-bold">Step 4</h5>
+                <p class="card-text">Click on "<span class="fw-bold text-primary">Conversations</span>"</p>
+                <img src="images/image4.png" alt="Conversations link" class="img-fluid border rounded" style="max-height: 350px;">
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title text-primary fw-bold">Step 5</h5>
+                <p class="card-text">Click the testing link in the conversation (the end will vary depending on the game):</p>
+                <div class="bg-light p-2 rounded mb-3 small">
+                    Example: <code>https://play.google.com/apps/testing/com.inspiringfamily.reversi</code>
+                </div>
+                <img src="images/image6.png" alt="Testing Link" class="img-fluid border rounded">
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title text-primary fw-bold">Step 6</h5>
+                <p class="card-text">Click on "<span class="fw-bold">Become A Tester</span>"</p>
+                <img src="images/image3.png" alt="Become a tester" class="img-fluid border rounded">
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title text-primary fw-bold">Step 7</h5>
+                <p class="card-text">Click on "<span class="fw-bold text-primary">download it on Google Play</span>" and follow the prompts.</p>
+                <img src="images/image2.png" alt="Google Play Download" class="img-fluid border rounded">
+            </div>
+        </div>
+
+        <div class="mt-5">
+            <h3 class="fw-bold mb-4">Additional Groups</h3>
+            
+            <div class="alert alert-secondary shadow-sm d-flex align-items-center justify-content-between">
+                <div>
+                    <strong>Next:</strong> Join the Chain Reaction Beta Group.
+                </div>
+                <a href="https://groups.google.com/g/chainreactionbetagroup" class="btn btn-sm btn-dark" target="_blank" rel="noopener noreferrer">Join Group</a>
+            </div>
+
+            <div class="alert alert-secondary shadow-sm d-flex align-items-center justify-content-between">
+                <div>
+                    <strong>Last:</strong> Join the Mines Beta Group.
+                </div>
+                <a href="https://groups.google.com/g/minesbetagroup" class="btn btn-sm btn-dark" target="_blank" rel="noopener noreferrer">Join Group</a>
+            </div>
+        </div>
+
+        <div class="text-center mt-5 text-muted">
+            <p>If you have any questions, please DM me.</p>
+            <p class="fw-bold">Thanks!</p>
+        </div>
+    </main>
+
+    <%- include('./partials/body-script.ejs') %>
+    <%- include('./partials/footer.ejs') %>
+</body>
+</html>
