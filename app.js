@@ -181,9 +181,6 @@ app.set('trust proxy', 1);  // This enables trust for the first proxy (Cloudflar
 // Processing of Connection and Requests
 ////////////////////////////////////////////////////////
 
-//session information is vital to everything...
-app.use( session(sessionOptions) );
-
 //redirect any page from http to https (only works on HTTP port 3000)
 app.use((req, res, next) => {
   // const sessionId = req.sessionID;
@@ -216,10 +213,31 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use( bodyParser.json() );
-app.use( bodyParser.urlencoded({extended: false}) );
+// 2. BODY PARSERS
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 
-app.use( express.static('public') );
+// 3. SESSIONS
+app.use(session(sessionOptions));
+
+// 4. RAM-FIRST STATIC FILES (entire public folder)
+app.use((req, res, next) => {
+  const ramPath = path.join("/mnt/ramdisk/public", req.path);
+  const usbPath = path.join("/mnt/webusb/site/public", req.path);
+
+  fs.access(ramPath, fs.constants.F_OK, (err) => {
+    const filePath = err ? usbPath : ramPath;
+    res.sendFile(filePath, (err) => {
+      if (err) next();
+    });
+  });
+});
+
+// 5. EXPRESS STATIC FALLBACK (must be LAST)
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: '1d',
+  etag: true
+}));
 
 /////////////////////////////////////////////////////////////////
 // Server Opens These Ports to Listen
