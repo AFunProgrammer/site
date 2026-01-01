@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 
+const compression = require('compression');
 const crypto = require('crypto');
 const uuid = require('uuid');
 const url = require('url');
@@ -181,6 +182,9 @@ app.set('trust proxy', 1);  // This enables trust for the first proxy (Cloudflar
 // Processing of Connection and Requests
 ////////////////////////////////////////////////////////
 
+//compress everything outbound
+app.use(compression());
+
 //redirect any page from http to https (only works on HTTP port 3000)
 app.use((req, res, next) => {
   // const sessionId = req.sessionID;
@@ -217,27 +221,28 @@ app.use((req, res, next) => {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-// 3. SESSIONS
-app.use(session(sessionOptions));
-
-// 4. RAM-FIRST STATIC FILES (entire public folder)
-app.use((req, res, next) => {
-  const ramPath = path.join("/mnt/ramdisk/public", req.path);
-  const usbPath = path.join("/mnt/webusb/site/public", req.path);
-
-  fs.access(ramPath, fs.constants.F_OK, (err) => {
-    const filePath = err ? usbPath : ramPath;
-    res.sendFile(filePath, (err) => {
-      if (err) next();
-    });
-  });
-});
-
-// 5. EXPRESS STATIC FALLBACK (must be LAST)
-app.use(express.static(path.join(__dirname, 'public'), {
+/// 3. RAM-FIRST STATIC FILES
+// This hits the RAM disk first. If the file exists, Express serves it and stops.
+app.use(express.static('/mnt/ramdisk/public', {
   maxAge: '1d',
-  etag: true
+  etag: true,
+  setHeaders: (res, path) => {
+    res.set('X-Source', 'Disk'); // Useful for debugging in Browser DevTools
+  }
 }));
+
+// 4. USB FALLBACK
+// If the RAM disk didn't have the file, check the USB drive.
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: '1h', // Lower cache for things not in RAM
+  etag: true,
+  setHeaders: (res, path) => {
+    res.set('X-Source', 'Drive');
+  }
+}));
+
+// 5. SESSIONS
+app.use(session(sessionOptions));
 
 /////////////////////////////////////////////////////////////////
 // Server Opens These Ports to Listen
