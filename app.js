@@ -56,14 +56,16 @@ const envFile = require('./private/settings/local.json');
 
 var sessionOptions = {
   cookie: {
-    secure: true, // Set to true if using HTTPS
-    httpOnly: true, // Prevent client-side access
-    sameSite: 'lax', // or 'strict'    
+    secure: true,      // Now works because 'trust proxy' is enabled
+    httpOnly: true,    
+    sameSite: 'lax',   
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours (prevents "session-only" deletion)
   },
+  proxy: true,         // Tells express-session to trust the X-Forwarded-Proto header
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false, // Better for GDPR and performance
   secret: settings.secrets.session,
-  store: new session.MemoryStore()
+  // store: new session.MemoryStore() <-- Replace this with your SQL Store tomorrow!
 };
 
 const codeVerifier = uuid.v1() + crypto.randomBytes(32).toString('hex');
