@@ -254,40 +254,42 @@ class OMediaDownloader {
 ////////////////////////////////////
 // SSH for offloading heavy tasks
 ////////////////////////////////////
-try{
-  conn.on("ready", () => {
-      console.log("Client :: Connected Successfully");
-    }).on("keyboard-interactive", (name, instructions, instructionsLang, prompts, finish) => {
-        // Handle Interactive Prompt
-        const answers = prompts.map((prompt) => {
-          console.log(`ssh2: connection: requesting: ${prompt.prompt}`);
+if (false) {
+  try{
+    conn.on("ready", () => {
+        console.log("Client :: Connected Successfully");
+      }).on("keyboard-interactive", (name, instructions, instructionsLang, prompts, finish) => {
+          // Handle Interactive Prompt
+          const answers = prompts.map((prompt) => {
+            console.log(`ssh2: connection: requesting: ${prompt.prompt}`);
 
-          if (prompt.prompt.includes("Password")) {
-            console.log("\tsending Password");
-            return settings.ssh.password;
-          } else if (prompt.prompt.includes("Verification code")) {
-            // generate TOTP
-            let totpCode = speakeasy.totp({
-              secret: settings.ssh.otp,
-              encoding: "base32",
-            });
-            console.log(`\tsending Verification Code`);
-            return totpCode; // Send the generated TOTP code
-          } else {
-            return ""; // For other prompts, send empty or default responses
-          }
-        });
-        finish(answers);
-      }
-    ).connect({
-      host: settings.ssh.server,
-      port: settings.ssh.port,
-      username: settings.ssh.user,
-      tryKeyboard: true,
-    });
-}catch(error){
-  OMediaDownloader.useLocal = true;
-  console.error(error);
+            if (prompt.prompt.includes("Password")) {
+              console.log("\tsending Password");
+              return settings.ssh.password;
+            } else if (prompt.prompt.includes("Verification code")) {
+              // generate TOTP
+              let totpCode = speakeasy.totp({
+                secret: settings.ssh.otp,
+                encoding: "base32",
+              });
+              console.log(`\tsending Verification Code`);
+              return totpCode; // Send the generated TOTP code
+            } else {
+              return ""; // For other prompts, send empty or default responses
+            }
+          });
+          finish(answers);
+        }
+      ).connect({
+        host: settings.ssh.server,
+        port: settings.ssh.port,
+        username: settings.ssh.user,
+        tryKeyboard: true,
+      });
+  }catch(error){
+    OMediaDownloader.useLocal = true;
+    console.error(error);
+  }
 }
 
 

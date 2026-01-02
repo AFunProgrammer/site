@@ -3,7 +3,19 @@
 <head>
     <%- include('./partials/head.ejs') %>
     <%- include('./partials/head-scripts.ejs') %>
-    </head>
+    <style>
+        /* Ensures images scale responsively but don't exceed the card width */
+        .tutorial-img {
+            background: #f8f9fa; /* Light gray placeholder */
+            min-height: 100px;   /* Ensures a small footprint even if ratio fails */
+            content-visibility: auto; /* Helps the browser skip rendering off-screen images */
+            width: 100%;
+            height: auto; /* Maintains the aspect ratio defined by width/height attributes */
+            display: block;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
 
 <body class="bg-white">
     <%- include('./partials/nav.ejs') %>
@@ -18,7 +30,7 @@
             <div class="me-3 fs-3">📧</div> 
             <div>
                 <h6 class="mb-1 fw-bold">Requirement: Google/GMail Account</h6>
-                <p class="mb-0 small">You must be signed into a <strong>GMail or Google Account</strong> in your browser to access these groups and the Play Store testing links.</p>
+                <p class="mb-0 small">You must be signed into a <strong>GMail or Google Account</strong> in your browser.</p>
             </div>
         </div>
 
@@ -28,27 +40,20 @@
                     <span class="badge bg-primary rounded-pill me-2">1</span>
                     <h5 class="card-title text-primary fw-bold mb-0">Join the Group</h5>
                 </div>
-                <p class="card-text">Click on the following link (Reversi Beta Group):</p>
-                <a href="https://groups.google.com/g/reversibetagroup" class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer">
-                    Join Reversi Group
-                </a>
-            </div>
-        </div>
-
-        <div class="card shadow-sm mb-4 border-info">
-            <div class="card-body">
-                <h5 class="card-title text-info fw-bold">Step 1.5</h5>
-                <p class="card-text">Continue to <strong>Step 2</strong> if you see the joining notice. If not, you should see the message in <strong>Step 4</strong> (skip to that one).</p>
+                <p class="card-text">Click on the link (Reversi Beta Group):</p>
+                <a href="https://groups.google.com/g/reversibetagroup" class="btn btn-outline-primary" target="_blank" rel="noopener noreferrer">Join Reversi Group</a>
             </div>
         </div>
 
         <div class="card shadow-sm mb-4">
             <div class="card-body">
                 <h5 class="card-title text-primary fw-bold">Step 2</h5>
-                <p class="card-text">Click on "<span class="fw-bold text-primary">joining the group</span>" and it will prompt you to join:</p>
+                <p class="card-text">Click on "<span class="fw-bold text-primary">joining the group</span>":</p>
                 <img src="images/image1.png" 
-                    class="img-fluid  border rounded" 
-                    style="max-height: 250px; width: auto;" 
+                    class="img-fluid border rounded tutorial-img" 
+                    style="max-height: 250px; width: auto;"
+                    width="711" height="510"
+                    fetchpriority="high"
                     alt="Join Group Prompt">
             </div>
         </div>
@@ -56,8 +61,13 @@
         <div class="card shadow-sm mb-4">
             <div class="card-body">
                 <h5 class="card-title text-primary fw-bold">Step 3</h5>
-                <p class="card-text">Click on "<span class="fw-bold text-primary">Join group</span>". After joining, you should see this:</p>
-                <img src="images/image5.png" alt="Joined Success" class="img-fluid border rounded" style="max-height: 300px;">
+                <p class="card-text">Click on "<span class="fw-bold text-primary">Join group</span>":</p>
+                <img src="images/image5.png" 
+                    width="506" height="601"
+                    loading="lazy"
+                    class="img-fluid border rounded tutorial-img" 
+                    style="max-height: 300px; width: auto;"
+                    alt="Joined Success">
             </div>
         </div>
 
@@ -65,18 +75,24 @@
             <div class="card-body">
                 <h5 class="card-title text-primary fw-bold">Step 4</h5>
                 <p class="card-text">Click on "<span class="fw-bold text-primary">Conversations</span>"</p>
-                <img src="images/image4.png" alt="Conversations link" class="img-fluid border rounded" style="max-height: 350px;">
+                <img src="images/image4.png" 
+                    width="468" height="766"
+                    loading="lazy"
+                    class="img-fluid border rounded tutorial-img" 
+                    style="max-height: 350px; width: auto;"
+                    alt="Conversations link">
             </div>
         </div>
 
         <div class="card shadow-sm mb-4">
             <div class="card-body">
                 <h5 class="card-title text-primary fw-bold">Step 5</h5>
-                <p class="card-text">Click the testing link in the conversation (the end will vary depending on the game):</p>
-                <div class="bg-light p-2 rounded mb-3 small">
-                    Example: <code>https://play.google.com/apps/testing/com.inspiringfamily.reversi</code>
-                </div>
-                <img src="images/image6.png" alt="Testing Link" class="img-fluid border rounded">
+                <p class="card-text">Click the testing link in the conversation:</p>
+                <img src="images/image6.png" 
+                    width="1007" height="188"
+                    loading="lazy"
+                    class="img-fluid border rounded tutorial-img" 
+                    alt="Testing Link">
             </div>
         </div>
 
@@ -84,41 +100,27 @@
             <div class="card-body">
                 <h5 class="card-title text-primary fw-bold">Step 6</h5>
                 <p class="card-text">Click on "<span class="fw-bold">Become A Tester</span>"</p>
-                <img src="images/image3.png" alt="Become a tester" class="img-fluid border rounded">
+                <img src="images/image3.png" 
+                    width="954" height="414"
+                    loading="lazy"
+                    class="img-fluid border rounded tutorial-img" 
+                    alt="Become a tester">
             </div>
         </div>
 
         <div class="card shadow-sm mb-4">
             <div class="card-body">
                 <h5 class="card-title text-primary fw-bold">Step 7</h5>
-                <p class="card-text">Click on "<span class="fw-bold text-primary">download it on Google Play</span>" and follow the prompts.</p>
-                <img src="images/image2.png" alt="Google Play Download" class="img-fluid border rounded">
+                <p class="card-text">Click on "<span class="fw-bold text-primary">download it on Google Play</span>":</p>
+                <img src="images/image2.png" 
+                    width="1248" height="761"
+                    loading="lazy"
+                    class="img-fluid border rounded tutorial-img" 
+                    alt="Google Play Download">
             </div>
         </div>
 
-        <div class="mt-5">
-            <h3 class="fw-bold mb-4">Additional Groups</h3>
-            
-            <div class="alert alert-secondary shadow-sm d-flex align-items-center justify-content-between">
-                <div>
-                    <strong>Next:</strong> Join the Chain Reaction Beta Group.
-                </div>
-                <a href="https://groups.google.com/g/chainreactionbetagroup" class="btn btn-sm btn-dark" target="_blank" rel="noopener noreferrer">Join Group</a>
-            </div>
-
-            <div class="alert alert-secondary shadow-sm d-flex align-items-center justify-content-between">
-                <div>
-                    <strong>Last:</strong> Join the Mines Beta Group.
-                </div>
-                <a href="https://groups.google.com/g/minesbetagroup" class="btn btn-sm btn-dark" target="_blank" rel="noopener noreferrer">Join Group</a>
-            </div>
-        </div>
-
-        <div class="text-center mt-5 text-muted">
-            <p>If you have any questions, please DM me.</p>
-            <p class="fw-bold">Thanks!</p>
-        </div>
-    </main>
+        </main>
 
     <%- include('./partials/body-script.ejs') %>
     <%- include('./partials/footer.ejs') %>
