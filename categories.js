@@ -257,8 +257,8 @@ class OCategories{
     this.#currentGameNum = number.toString().padStart(5, '0');
   }
 
-  static getGameList(){
-    this.getGameListFromDisk();
+  static async getGameList(){
+    await this.getGameListFromDisk();
 
     if ( this.#gameList.length == 0){
       return [];
@@ -267,14 +267,14 @@ class OCategories{
     return this.#gameList;
   }
 
-  static getGameListFromDisk(){
+  static async getGameListFromDisk(){
     if ( (this.#listAtGameNum == this.#currentGameNum) &&
        (this.#listAtGameNum.localeCompare("-1") >= 1) ){
       return; //list already retrieved and no new games added
     }
 
-    let files = fs.readdirSync(this.#rootPath, {withFileTypes: true});
-
+    //let files = fs.readdirSync(this.#rootPath, {withFileTypes: true});
+    const files = await fs.promises.readdir(this.#rootPath, {withFileTypes: true});
     this.#gameList = [];
 
     files.forEach( file => {

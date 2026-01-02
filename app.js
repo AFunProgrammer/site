@@ -23,6 +23,9 @@ const multer = require('multer');
 // web agent
 const mobileDetect = require('mobile-detect');
 
+// redis connection for session store
+const { createClient } = require('redis');
+const { RedisStore } = require('connect-redis');
 // private functions
 const { serverEncrypt, serverDecrypt, serverObfuscateData } = require('./private/code/crypto_utils.js');
 
@@ -42,8 +45,9 @@ const OBlog = require('./blog.js');
 // Global Variables:
 ////////////////////////////////////////////
 // ProxyDNS's IP ranges for IPv4 and IPv6 (you can update these regularly)
-const proxyDNSV4IpRanges = [];
-const proxyDNSV6IpRanges = [];
+var proxyDNSV4IpRanges = [1];
+var proxyDNSV6IpRanges = [1];
+var trustedIps = new Set([...proxyDNSV4IpRanges, ...proxyDNSV6IpRanges]);
 
 var lastMulterDirectory = '';
 var setGamePath = "";
@@ -54,6 +58,34 @@ const envFile = require('./private/settings/local.json');
 // PROD - WebSite
 //const envFile = require('./private/settings/website.json');
 
+// Connect to your Ubuntu Docker IP (Replace 192.168.1.xxx with your Ubuntu IP)
+// 1. Point to the Linux Server IP instead of localhost
+const redisClient = createClient({ 
+    url: 'redis://192.168.1.101:6379',
+    socket: {
+        connectTimeout: 5000, // 5 seconds max wait
+        keepAlive: 1000       // Keep the pipe open
+    }
+});
+
+redisClient.connect().catch(err => {
+    console.error("Could not connect to Redis on Linux Server:", err);
+});
+
+const redisStore = new RedisStore({
+  client: redisClient,
+  prefix: 'inspiringfamily:',
+  serializer: {
+    // connect-redis v7+ uses encode/decode
+    encode: (obj) => serverEncrypt(JSON.stringify(obj)),
+    decode: (str) => JSON.parse(serverDecrypt(str)),
+    // Compatibility for the internal 'stringify' call you're seeing
+    stringify: (obj) => serverEncrypt(JSON.stringify(obj)),
+    parse: (str) => JSON.parse(serverDecrypt(str))
+  }
+});
+
+// Session settings (for cookie)
 var sessionOptions = {
   cookie: {
     secure: true,      // Now works because 'trust proxy' is enabled
@@ -61,6 +93,7 @@ var sessionOptions = {
     sameSite: 'lax',   
     maxAge: 24 * 60 * 60 * 1000 // 24 hours (prevents "session-only" deletion)
   },
+  store: redisStore,
   proxy: true,         // Tells express-session to trust the X-Forwarded-Proto header
   resave: false,
   saveUninitialized: false, // Better for GDPR and performance
@@ -86,7 +119,6 @@ var credentials = {key: privateKey, cert: certificate};
 const gglAuthKeys = require(envFile.gglAuthKeysFile);
 const msftAuthKeys = require(envFile.msftAuthKeysFile);
 const yhooAuthKeys = require(envFile.yhooAuthKeysFile);
-
 
 const gglWebAuth = new OAuth2Client(
   gglAuthKeys.web.client_id,
@@ -167,6 +199,11 @@ const https = require('https');
 const defunct = http.createServer(app);
 const server = https.createServer(credentials, app);
 
+// set agressive timeouts to keep server from stalling
+server.keepAliveTimeout = 5000; // 5 seconds
+server.headersTimeout = 6000;
+server.timeout = 10000; // Total 10s ceiling
+
 // setup io for websocket communication
 const { Server } = require("socket.io");
 const io = new Server(server);
@@ -176,9 +213,15 @@ app.disable('x-powered-by')
 
 // Express Setup View Engine
 app.set('view engine', 'ejs');
+// Express Setup View Cache
+app.set('view cache', true);
 // Express Setup Trust Cloudflare as a proxy
-app.set('trust proxy', 1);  // This enables trust for the first proxy (Cloudflare)
-
+app.set('trust proxy', (ip) => {
+  //console.log(`Checking IP for Trust: ${ip}`);
+  if (trustedIps.has(ip)) return true;
+  // Handle CIDR ranges with a fast library like 'ip-range-check'
+  return false; 
+});
 
 ////////////////////////////////////////////////////////
 // Processing of Connection and Requests
@@ -502,7 +545,7 @@ app.get('/categories', async (req, res) => {
   let editUrl = "";
 
   try{
-    let gameList = OCategories.getGameList();
+    let gameList = await OCategories.getGameList();
     if ( gameList.length == 0 ){
       gameList.push("None");
     }
@@ -1609,34 +1652,55 @@ async function updateGamePath(req, res, next){
 
 const updateProxyDnsIpRange = async () => {
   try {
-    // Fetch Cloudflare IPv4 ranges
-    const { data } = await axios.get('https://www.cloudflare.com/ips-v4');
-    const v4Data = entities.decodeHTML(data);
-    v4Data.split('\n').forEach((value) => {
-      proxyDNSV4IpRanges.push(value);
-    });
-    fs.writeFileSync('./private/settings/cloudflare-ips-v4.log', v4Data); // Save the data to a file if needed
+    const { data: v4 } = await axios.get('https://www.cloudflare.com/ips-v4');
+    const { data: v6 } = await axios.get('https://www.cloudflare.com/ips-v6');
 
-    // Fetch Cloudflare IPv6 ranges
-    const { data: dataV6 } = await axios.get('https://www.cloudflare.com/ips-v6');
-    const v6Data = entities.decodeHTML(dataV6);
-    v6Data.split('\n').forEach((value) => {
-      proxyDNSV6IpRanges.push(value);
-    });
-    fs.writeFileSync('./private/settings/cloudflare-ips-v6.log', v6Data); // Save the data to a file if needed
+    // Reset and Update
+    proxyDNSV4IpRanges = v4.split('\n').filter(Boolean);
+    proxyDNSV6IpRanges = v6.split('\n').filter(Boolean);
 
-    console.log('Proxy DNS IP ranges updated successfully.');
+    // Atomic update of the Set
+    trustedIps = new Set([...proxyDNSV4IpRanges, ...proxyDNSV6IpRanges]);
+    
+    // Write logs asynchronously to avoid blocking the bus
+    fs.writeFile('./private/settings/cloudflare-ips-v4.log', v4, () => {});
+    fs.writeFile('./private/settings/cloudflare-ips-v6.log', v6, () => {});
 
-    // Dynamically set the updated Cloudflare IP ranges in `trust proxy`
-    const updatedRanges = [...proxyDNSV4IpRanges, ...proxyDNSV6IpRanges];
-    app.set('trust proxy', updatedRanges.join(', ')); // Set it as a comma-separated string
-
-    console.log('Trust proxy updated with Cloudflare IP ranges.');
-
+    console.log('✅ Proxy DNS IP ranges updated successfully.');
   } catch (err) {
     console.error('Failed to update Proxy DNS IPs:', err);
   }
 };
+
+
+////////////////////////////////////////////////////
+// Health Check
+////////////////////////////////////////////////////
+// health-check.js [TBD]
+async function checkSystemHealth() {
+    const health = {
+        timestamp: new Date().toISOString(),
+        redis: false,
+        latency: 0
+    };
+
+    try {
+        const start = Date.now();
+        // Ping Redis on the Ubuntu Server
+        const pingResponse = await redisClient.ping();
+        health.latency = Date.now() - start;
+        
+        if (pingResponse === 'PONG') {
+            health.redis = true;
+            console.log(`✅ Redis Link Healthy: ${health.latency}ms`);
+        }
+    } catch (err) {
+        console.error("❌ Redis Link Down:", err.message);
+        // Alert logic here (e.g., restart PM2 or log to file)
+    }
+    
+    return health;
+}
 
 ////////////////////////////////////////////////////
 // anything that needs to run at startup
@@ -1650,4 +1714,7 @@ console.log('Global: Code Challenge:', codeChallenge);
 // Call it periodically (e.g., once a day)
 updateProxyDnsIpRange();
 setInterval(updateProxyDnsIpRange, 24 * 60 * 60 * 1000);  // 24 hours interval
+
+// Run every 60 seconds to ensure the Pi hasn't lost the Ubuntu route
+setInterval(checkSystemHealth, 60000);
 
