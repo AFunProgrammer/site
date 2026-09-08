@@ -1,0 +1,47 @@
+services:
+  node-app:
+    build: ./site
+    container_name: node-app
+    restart: always
+    cpuset: "0-3"        # <-- restrict this container to CPUs 0-3
+    ports:
+      - "3000:3000" # http
+      - "3443:3443" # secure http
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DB_PORT=5432
+      - DB_HOST=db
+      - DB_USER=nodesql
+      - DB_PASSWORD=kamisama123
+      - DB_NAME=postgres
+      - NODE_ENV=production
+      - TZ=America/Los_Angeles
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./site:/app
+      - /app/node_modules # Prevents local node_modules from overwriting container's
+
+  db:
+    image: postgres:15
+    container_name: postgres-db
+    restart: always
+    cpuset: "0-3"        # <-- restrict this container to CPUs 0-3
+    environment:
+      POSTGRES_USER: nodesql
+      POSTGRES_PASSWORD: kamisama123
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:alpine
+    container_name: redis-cache
+    restart: always
+    cpuset: "0-3"        # <-- restrict this container to CPUs 0-3
+    volumes:
+      - ./redis-data:/data
+
+volumes:
+  postgres_data:
