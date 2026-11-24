@@ -1,6 +1,7 @@
 # ignore files
 *.lock
 package-lock.json
+nodemon.log
 
 # ignore directories
 public/videos/
