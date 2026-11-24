@@ -54,14 +54,14 @@ var setGamePath = "";
 var messages = [];
 const settings = require('./private/settings/private.json');
 // DEV - LocalHost
-const envFile = require('./private/settings/local.json');
+//const envFile = require('./private/settings/local.json');
 // PROD - WebSite
-//const envFile = require('./private/settings/website.json');
+const envFile = require('./private/settings/website.json');
 
 // Connect to your Ubuntu Docker IP (Replace 192.168.1.xxx with your Ubuntu IP)
 // 1. Point to the Linux Server IP instead of localhost
 const redisClient = createClient({ 
-    url: 'redis://192.168.1.101:6379',
+    url: process.env.REDIS_URL || 'redis://redis:6379',
     socket: {
         connectTimeout: 5000, // 5 seconds max wait
         keepAlive: 1000       // Keep the pipe open
